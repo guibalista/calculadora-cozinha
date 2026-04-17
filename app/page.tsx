@@ -2,47 +2,57 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm text-center">
+    <main className="min-h-screen flex flex-col" style={{ background: '#F7F5F2' }}>
 
-        <div className="mb-8">
-          <div className="text-5xl mb-4">🍽️</div>
-          <h1 className="text-3xl font-bold text-[#c8783a] mb-2">CozinhaPro</h1>
-          <p className="text-[#8a7f74] text-base leading-relaxed">
-            Calculadora inteligente de receitas para casas de temporada e pousadas
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 pt-8 pb-4">
+        <span className="text-xl font-bold tracking-tight" style={{ color: '#222' }}>despensa</span>
+        <Link href="/login" className="text-sm font-medium underline" style={{ color: '#222' }}>Entrar</Link>
+      </header>
+
+      {/* Hero */}
+      <section className="flex-1 flex flex-col justify-center px-6 py-12 max-w-sm mx-auto w-full">
+        <div className="mb-10">
+          <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#9B8B7A' }}>Para casas de temporada</p>
+          <h1 className="text-4xl font-bold leading-tight mb-4" style={{ color: '#222' }}>
+            Planeje a semana.<br />Sem desperdício.
+          </h1>
+          <p className="text-base leading-relaxed" style={{ color: '#717171' }}>
+            Monte o cardápio por dia, informe os hóspedes e receba a lista de compras pronta.
           </p>
         </div>
 
         <div className="space-y-3">
           <Link
-            href="/login"
-            className="block w-full bg-[#c8783a] text-white font-semibold py-4 px-6 rounded-2xl text-center text-lg active:bg-[#a85e28] transition-colors"
+            href="/cadastro"
+            className="flex items-center justify-center w-full py-4 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
+            style={{ background: '#222', color: '#fff' }}
           >
-            Entrar
+            Começar agora
           </Link>
           <Link
-            href="/cadastro"
-            className="block w-full border-2 border-[#c8783a] text-[#c8783a] font-semibold py-4 px-6 rounded-2xl text-center text-lg active:bg-orange-50 transition-colors"
+            href="/login"
+            className="flex items-center justify-center w-full py-4 rounded-2xl font-semibold text-base border transition-opacity active:opacity-80"
+            style={{ border: '1.5px solid #DDDDDD', color: '#222', background: '#fff' }}
           >
-            Criar conta
+            Já tenho conta
           </Link>
         </div>
 
-        <div className="mt-12 grid grid-cols-3 gap-4 text-center">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#e5e0d8]">
-            <div className="text-2xl mb-1">⚖️</div>
-            <p className="text-xs text-[#8a7f74] font-medium">Sem desperdício</p>
-          </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#e5e0d8]">
-            <div className="text-2xl mb-1">💰</div>
-            <p className="text-xs text-[#8a7f74] font-medium">Custos precisos</p>
-          </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#e5e0d8]">
-            <div className="text-2xl mb-1">📋</div>
-            <p className="text-xs text-[#8a7f74] font-medium">Lista organizada</p>
-          </div>
+        {/* Benefícios */}
+        <div className="mt-12 space-y-4">
+          {[
+            { icon: '👤', text: 'Calcula por homem, mulher e criança' },
+            { icon: '📅', text: 'Planeja dia a dia com convidados extras' },
+            { icon: '🛒', text: 'Gera lista de compras da semana inteira' },
+          ].map(b => (
+            <div key={b.text} className="flex items-center gap-4">
+              <span className="text-xl w-8 text-center">{b.icon}</span>
+              <span className="text-sm" style={{ color: '#717171' }}>{b.text}</span>
+            </div>
+          ))}
         </div>
-      </div>
+      </section>
     </main>
   )
 }

@@ -12,97 +12,70 @@ export default function CadastroPage() {
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
 
-  async function handleCadastro(e: React.FormEvent) {
+  async function handleCadastro(e: React.SyntheticEvent) {
     e.preventDefault()
     setErro('')
     setCarregando(true)
-
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password: senha,
-      options: {
-        data: { nome_casa: nomeCasa }
-      }
+      email, password: senha,
+      options: { data: { nome_casa: nomeCasa } }
     })
-
-    if (error) {
-      setErro('Erro ao criar conta: ' + error.message)
-    } else if (data.user) {
-      router.push('/dashboard')
-    }
+    if (error) setErro('Erro ao criar conta: ' + error.message)
+    else if (data.user) router.push('/dashboard')
     setCarregando(false)
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
+    <main className="min-h-screen flex flex-col px-6 py-10 max-w-sm mx-auto w-full justify-center" style={{ background: '#F7F5F2' }}>
+      <Link href="/" className="text-xl font-bold tracking-tight mb-10 block" style={{ color: '#222' }}>despensa</Link>
 
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">🏠</div>
-          <h1 className="text-2xl font-bold text-[#c8783a]">Criar conta</h1>
-          <p className="text-[#8a7f74] text-sm mt-1">Cadastre sua casa ou pousada</p>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Criar conta</h1>
+      <p className="text-sm mb-8" style={{ color: '#717171' }}>Cadastre sua casa ou pousada</p>
+
+      <form onSubmit={handleCadastro} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#222' }}>Nome da casa ou pousada</label>
+          <input
+            type="text" value={nomeCasa} onChange={e => setNomeCasa(e.target.value)}
+            placeholder="Ex: Casa Trancoso, Villa Mar" required
+            className="w-full px-4 py-3.5 rounded-2xl border text-base outline-none"
+            style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#222' }}>Email</label>
+          <input
+            type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="seu@email.com" required
+            className="w-full px-4 py-3.5 rounded-2xl border text-base outline-none"
+            style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#222' }}>Senha</label>
+          <input
+            type="password" value={senha} onChange={e => setSenha(e.target.value)}
+            placeholder="Mínimo 8 caracteres" minLength={8} required
+            className="w-full px-4 py-3.5 rounded-2xl border text-base outline-none"
+            style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+          />
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#e5e0d8]">
-          <form onSubmit={handleCadastro} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1">Nome da casa / pousada</label>
-              <input
-                type="text"
-                value={nomeCasa}
-                onChange={e => setNomeCasa(e.target.value)}
-                placeholder="Ex: Casa Trancoso, Pousada Sol"
-                required
-                className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1">Senha</label>
-              <input
-                type="password"
-                value={senha}
-                onChange={e => setSenha(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
-                minLength={8}
-                required
-                className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-              />
-            </div>
+        {erro && <p className="text-sm px-4 py-3 rounded-2xl" style={{ background: '#FEF2F2', color: '#C13515' }}>{erro}</p>}
 
-            {erro && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-                {erro}
-              </div>
-            )}
+        <button
+          type="submit" disabled={carregando}
+          className="w-full py-4 rounded-2xl font-semibold text-base disabled:opacity-50"
+          style={{ background: '#222', color: '#fff' }}
+        >
+          {carregando ? 'Criando conta...' : 'Criar conta'}
+        </button>
+      </form>
 
-            <button
-              type="submit"
-              disabled={carregando}
-              className="w-full bg-[#c8783a] text-white font-semibold py-4 rounded-2xl text-base disabled:opacity-60 active:bg-[#a85e28] transition-colors"
-            >
-              {carregando ? 'Criando conta...' : 'Criar conta'}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-sm text-[#8a7f74] mt-6">
-          Já tem conta?{' '}
-          <Link href="/login" className="text-[#c8783a] font-medium">
-            Entrar
-          </Link>
-        </p>
-      </div>
+      <p className="text-center text-sm mt-8" style={{ color: '#717171' }}>
+        Já tem conta?{' '}
+        <Link href="/login" className="font-semibold underline" style={{ color: '#222' }}>Entrar</Link>
+      </p>
     </main>
   )
 }
