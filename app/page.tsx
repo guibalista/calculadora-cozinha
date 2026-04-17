@@ -39,19 +39,6 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Benefícios */}
-        <div className="mt-12 space-y-4">
-          {[
-            { icon: '👤', text: 'Calcula por homem, mulher e criança' },
-            { icon: '📅', text: 'Planeja dia a dia com convidados extras' },
-            { icon: '🛒', text: 'Gera lista de compras da semana inteira' },
-          ].map(b => (
-            <div key={b.text} className="flex items-center gap-4">
-              <span className="text-xl w-8 text-center">{b.icon}</span>
-              <span className="text-sm" style={{ color: '#717171' }}>{b.text}</span>
-            </div>
-          ))}
-        </div>
       </section>
     </main>
   )
