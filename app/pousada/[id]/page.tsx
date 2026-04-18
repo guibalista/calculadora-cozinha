@@ -1,0 +1,561 @@
+'use client'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { buscarIngrediente, type Ingrediente } from '@/lib/ingredientes-db'
+import { buscarReceita, resolverReceita, type Receita } from '@/lib/receitas-db'
+import { totalEquivalente } from '@/lib/percapita'
+import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
+import { converterParaCompra } from '@/lib/unidades-compra'
+import { baixarPDF } from '@/lib/exportar-pdf'
+import { calcularCustoPorcao, calcularCMV, statusCMV, formatarMoeda, type PrecoIngrediente } from '@/lib/cmv'
+
+interface IngPrato { nome: string; gramasPorcao: number; fc: number; categoria: string }
+interface Refeicao { id: string; nome: string; tipo: string; ingredientes: IngPrato[] }
+interface Hospedes { homens: number; mulheres: number; criancas: number }
+interface Pousada {
+  id: string; nome: string; totalQuartos: number
+  hospedes: Hospedes; refeicoes: string[]
+  diariaTipo: string; valorDiaria: number
+  cardapio: Refeicao[]; precos: PrecoIngrediente[]
+}
+
+type Aba = 'cardapio' | 'lista' | 'cmv'
+
+const TIPO_LABELS: Record<string, string> = {
+  cafe_manha: 'Café da manhã', almoco: 'Almoço', jantar: 'Jantar'
+}
+
+function InputIngrediente({ onAdicionar }: { onAdicionar: (i: IngPrato) => void }) {
+  const [termo, setTermo] = useState('')
+  const [sugestoes, setSugestoes] = useState<Ingrediente[]>([])
+  const [sel, setSel] = useState<Ingrediente | null>(null)
+  const [gramas, setGramas] = useState('')
+
+  function buscar(v: string) { setTermo(v); setSel(null); setSugestoes(v.length >= 2 ? buscarIngrediente(v) : []) }
+  function selecionar(s: Ingrediente) { setSel(s); setTermo(s.nome); setGramas(String(s.percapitaGramas)); setSugestoes([]) }
+  function confirmar() {
+    if (!sel || !gramas) return
+    onAdicionar({ nome: sel.nome, gramasPorcao: parseFloat(gramas), fc: sel.fatorCorrecao, categoria: sel.categoria })
+    setTermo(''); setSel(null); setGramas('')
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <input value={termo} onChange={e => buscar(e.target.value)} placeholder="Adicionar ingrediente..."
+          className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
+          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+        {sugestoes.length > 0 && (
+          <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
+            style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+            {sugestoes.map(s => (
+              <button key={s.nome} onClick={() => selecionar(s)}
+                className="w-full text-left px-4 py-3 text-sm flex justify-between"
+                style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
+                <span>{s.nome}</span>
+                <span className="text-xs" style={{ color: '#7BA892' }}>{s.percapitaGramas}g/p</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {sel && (
+        <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#E8F5EE' }}>
+          <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{sel.nome}</span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setGramas(v => String(Math.max(5, parseFloat(v || '0') - 10)))}
+              className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+              style={{ border: '1.5px solid #C8E4D4', background: '#fff' }}>−</button>
+            <input type="number" value={gramas} onChange={e => setGramas(e.target.value)}
+              className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
+            <span className="text-xs" style={{ color: '#7BA892' }}>g/p</span>
+            <button onClick={() => setGramas(v => String(parseFloat(v || '0') + 10))}
+              className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+              style={{ background: '#128C7E', color: '#fff' }}>+</button>
+          </div>
+          <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
+            Adicionar
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function PousadaPage() {
+  const { id } = useParams<{ id: string }>()
+  const [pousada, setPousada] = useState<Pousada | null>(null)
+  const [aba, setAba] = useState<Aba>('cardapio')
+
+  // Cardápio
+  const [addRef, setAddRef] = useState(false)
+  const [nomeRef, setNomeRef] = useState('')
+  const [tipoRef, setTipoRef] = useState('cafe_manha')
+  const [ingsRef, setIngsRef] = useState<IngPrato[]>([])
+  const [sugestoesReceita, setSugestoesReceita] = useState<Receita[]>([])
+
+  // Lista
+  const [diasLista, setDiasLista] = useState(7)
+  const [hospedesLista, setHospedesLista] = useState<{ homens: number; mulheres: number; criancas: number } | null>(null)
+  const [listaGerada, setListaGerada] = useState(false)
+  const [gerando, setGerando] = useState(false)
+
+  // CMV
+  const [editandoPreco, setEditandoPreco] = useState<string | null>(null)
+  const [editPrecoInput, setEditPrecoInput] = useState('')
+
+  useEffect(() => {
+    const lista = JSON.parse(localStorage.getItem('pousadas') || '[]')
+    const found = lista.find((p: Pousada) => p.id === id)
+    if (found) { setPousada(found); setHospedesLista(found.hospedes) }
+  }, [id])
+
+  function salvar(nova: Pousada) {
+    const lista = JSON.parse(localStorage.getItem('pousadas') || '[]')
+    const idx = lista.findIndex((p: Pousada) => p.id === id)
+    if (idx >= 0) { lista[idx] = nova; localStorage.setItem('pousadas', JSON.stringify(lista)) }
+    setPousada(nova)
+  }
+
+  function handleNomeRef(v: string) {
+    setNomeRef(v)
+    setSugestoesReceita(v.length >= 2 ? buscarReceita(v) : [])
+  }
+  function selecionarReceita(r: Receita) {
+    setNomeRef(r.nome)
+    setIngsRef(resolverReceita(r).map(i => ({ nome: i.nome, gramasPorcao: i.gramasPorPessoa, fc: i.fc, categoria: i.categoria })))
+    setSugestoesReceita([])
+  }
+  function salvarRefeicao() {
+    if (!pousada || !nomeRef || ingsRef.length === 0) return
+    const nova: Refeicao = { id: Date.now().toString(), nome: nomeRef, tipo: tipoRef, ingredientes: ingsRef }
+    salvar({ ...pousada, cardapio: [...pousada.cardapio, nova] })
+    setAddRef(false); setNomeRef(''); setIngsRef([]); setSugestoesReceita([])
+  }
+  function removerRefeicao(refId: string) {
+    if (!pousada) return
+    salvar({ ...pousada, cardapio: pousada.cardapio.filter(r => r.id !== refId) })
+  }
+
+  // Lista consolidada
+  function calcularLista(): ItemLista[] {
+    if (!pousada || !hospedesLista) return []
+    const equiv = totalEquivalente(hospedesLista)
+    const agg: Record<string, { categoria: string; bruto: number }> = {}
+    for (const ref of pousada.cardapio) {
+      for (const ing of ref.ingredientes) {
+        const bruto = (ing.gramasPorcao / 1000) * ing.fc * equiv * diasLista
+        if (!agg[ing.nome]) agg[ing.nome] = { categoria: ing.categoria, bruto: 0 }
+        agg[ing.nome].bruto += bruto
+      }
+    }
+    return Object.entries(agg).map(([nome, v]) => ({
+      nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.bruto,
+      compra: converterParaCompra(nome, v.bruto),
+    }))
+  }
+
+  const itensList = listaGerada ? calcularLista() : []
+  const grupos = agruparPorSetor(itensList)
+
+  async function exportarPDF() {
+    if (!pousada || grupos.length === 0) return
+    setGerando(true)
+    await baixarPDF({
+      nomeEvento: pousada.nome,
+      totalPessoas: `${(hospedesLista?.homens ?? 0) + (hospedesLista?.mulheres ?? 0) + (hospedesLista?.criancas ?? 0)} hóspedes`,
+      cenario: `${diasLista} dia${diasLista > 1 ? 's' : ''}`,
+      grupos,
+    })
+    setGerando(false)
+  }
+
+  function enviarWhatsApp() {
+    if (!pousada || grupos.length === 0) return
+    const texto = gerarTextoWhatsApp({
+      nomeEvento: pousada.nome,
+      totalPessoas: `${(hospedesLista?.homens ?? 0) + (hospedesLista?.mulheres ?? 0) + (hospedesLista?.criancas ?? 0)} hóspedes`,
+      cenario: `${diasLista} dias`,
+      grupos,
+    })
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
+  }
+
+  // CMV
+  function todosIngredientes(): string[] {
+    if (!pousada) return []
+    const set = new Set<string>()
+    pousada.cardapio.forEach(r => r.ingredientes.forEach(i => set.add(i.nome)))
+    return Array.from(set).sort()
+  }
+  function getPreco(nome: string): number {
+    return pousada?.precos.find(p => p.nome === nome)?.precoKg ?? 0
+  }
+  function salvarPreco(nome: string, valor: number) {
+    if (!pousada) return
+    const precos = pousada.precos.filter(p => p.nome !== nome)
+    if (valor > 0) precos.push({ nome, precoKg: valor })
+    salvar({ ...pousada, precos })
+    setEditandoPreco(null)
+  }
+
+  function custoRefeicaoPorPessoa(ref: Refeicao): number {
+    if (!pousada) return 0
+    return calcularCustoPorcao(
+      ref.ingredientes.map(i => ({ nome: i.nome, gramasPorcao: i.gramasPorcao, fc: i.fc })),
+      pousada.precos
+    )
+  }
+
+  function custoTotalPorNoite(): number {
+    if (!pousada || !hospedesLista) return 0
+    const equiv = totalEquivalente(hospedesLista)
+    return pousada.cardapio.reduce((sum, ref) => sum + custoRefeicaoPorPessoa(ref) * equiv, 0)
+  }
+
+  if (!pousada || !hospedesLista) return (
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
+      <p style={{ color: '#5A7A68' }}>Carregando...</p>
+    </div>
+  )
+
+  const totalHosp = hospedesLista.homens + hospedesLista.mulheres + hospedesLista.criancas
+  const custoNoite = custoTotalPorNoite()
+  const receita = pousada.valorDiaria > 0
+    ? (pousada.diariaTipo === 'por_quarto' ? pousada.valorDiaria : pousada.valorDiaria * totalHosp)
+    : 0
+  const cmvFB = receita > 0 ? calcularCMV(custoNoite, receita) : 0
+  const ingredientes = todosIngredientes()
+
+  return (
+    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
+      {/* Header */}
+      <div className="px-5 pt-8 pb-4">
+        <Link href="/dashboard" className="text-sm font-medium block mb-5" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#1A2E25' }}>{pousada.nome}</h1>
+            <p className="text-sm mt-1" style={{ color: '#5A7A68' }}>
+              {pousada.totalQuartos} quartos · {pousada.refeicoes.map(r => TIPO_LABELS[r]).join(', ')}
+            </p>
+          </div>
+          {cmvFB > 0 && (
+            <div className="flex-shrink-0 px-3 py-2 rounded-2xl text-center" style={statusCMV(cmvFB)}>
+              <p className="text-xs font-semibold">F&B CMV</p>
+              <p className="text-sm font-bold">{cmvFB.toFixed(1)}%</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Abas */}
+      <div className="flex px-5 gap-2 pb-4">
+        {(['cardapio', 'lista', 'cmv'] as Aba[]).map(a => (
+          <button key={a} onClick={() => setAba(a)}
+            className="flex-1 py-2.5 rounded-2xl text-sm font-semibold"
+            style={aba === a
+              ? { background: '#128C7E', color: '#fff' }
+              : { background: '#fff', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+            {a === 'cardapio' ? 'Cardápio' : a === 'lista' ? 'Lista' : 'CMV'}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-5 pb-10 space-y-4">
+
+        {/* ── ABA CARDÁPIO ── */}
+        {aba === 'cardapio' && (
+          <>
+            {pousada.cardapio.length === 0 && !addRef && (
+              <div className="text-center py-10">
+                <p className="font-semibold mb-1" style={{ color: '#1A2E25' }}>Cardápio vazio</p>
+                <p className="text-sm" style={{ color: '#5A7A68' }}>Adicione as refeições que a pousada serve</p>
+              </div>
+            )}
+
+            {pousada.cardapio.map(ref => {
+              const custo = custoRefeicaoPorPessoa(ref)
+              return (
+                <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold" style={{ color: '#1A2E25' }}>{ref.nome}</p>
+                      <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{TIPO_LABELS[ref.tipo] || ref.tipo}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {custo > 0 && (
+                        <span className="text-xs font-medium" style={{ color: '#128C7E' }}>{formatarMoeda(custo)}/p</span>
+                      )}
+                      <button onClick={() => removerRefeicao(ref.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
+                    </div>
+                  </div>
+                  <p className="text-xs" style={{ color: '#5A7A68' }}>{ref.ingredientes.length} ingrediente{ref.ingredientes.length !== 1 ? 's' : ''}</p>
+                </div>
+              )
+            })}
+
+            {addRef ? (
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
+                <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição</p>
+
+                <div className="mb-3">
+                  <p className="text-xs font-medium mb-2" style={{ color: '#5A7A68' }}>Tipo</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {pousada.refeicoes.map(r => (
+                      <button key={r} onClick={() => setTipoRef(r)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-medium"
+                        style={tipoRef === r
+                          ? { background: '#128C7E', color: '#fff' }
+                          : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                        {TIPO_LABELS[r]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-4 relative">
+                  <input value={nomeRef} onChange={e => handleNomeRef(e.target.value)}
+                    placeholder="Nome (ex: Café da manhã completo...)"
+                    className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
+                    style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+                  {sugestoesReceita.length > 0 && (
+                    <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
+                      style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+                      {sugestoesReceita.map(r => (
+                        <button key={r.id} onClick={() => selecionarReceita(r)}
+                          className="w-full text-left px-4 py-3 text-sm flex justify-between"
+                          style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
+                          <span className="font-medium">{r.nome}</span>
+                          <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ing.</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {ingsRef.length > 0 && (
+                  <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                    {ingsRef.map((ing, i) => (
+                      <div key={i} className="flex items-center justify-between px-4 py-3"
+                        style={{ borderBottom: i < ingsRef.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                        <span className="text-sm flex-1" style={{ color: '#1A2E25' }}>{ing.nome}</span>
+                        <span className="text-sm font-medium mr-3" style={{ color: '#7BA892' }}>{ing.gramasPorcao}g</span>
+                        <button onClick={() => setIngsRef(p => p.filter((_, j) => j !== i))}
+                          className="text-base" style={{ color: '#7BA892' }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <InputIngrediente onAdicionar={i => setIngsRef(p => [...p, i])} />
+
+                <div className="flex gap-3 mt-4">
+                  <button onClick={() => { setAddRef(false); setNomeRef(''); setIngsRef([]) }}
+                    className="flex-1 py-3 rounded-2xl text-sm font-medium"
+                    style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>Cancelar</button>
+                  <button onClick={salvarRefeicao} disabled={!nomeRef || ingsRef.length === 0}
+                    className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
+                    style={{ background: '#128C7E', color: '#fff' }}>Salvar refeição</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setAddRef(true)}
+                className="w-full py-4 rounded-3xl text-sm font-semibold"
+                style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
+                + Adicionar refeição ao cardápio
+              </button>
+            )}
+          </>
+        )}
+
+        {/* ── ABA LISTA ── */}
+        {aba === 'lista' && (
+          <>
+            {pousada.cardapio.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="font-semibold mb-2" style={{ color: '#1A2E25' }}>Nenhuma refeição cadastrada</p>
+                <button onClick={() => setAba('cardapio')} className="px-5 py-3 rounded-2xl text-sm font-semibold"
+                  style={{ background: '#128C7E', color: '#fff' }}>Montar cardápio</button>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                  <p className="text-sm font-semibold mb-4" style={{ color: '#1A2E25' }}>Configurar compra</p>
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm" style={{ color: '#5A7A68' }}>Dias de planejamento</p>
+                      <span className="font-bold" style={{ color: '#128C7E' }}>{diasLista}</span>
+                    </div>
+                    <input type="range" min="1" max="30" value={diasLista}
+                      onChange={e => { setDiasLista(parseInt(e.target.value)); setListaGerada(false) }}
+                      className="w-full" style={{ accentColor: '#128C7E' }} />
+                    <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+                      <span>1 dia</span><span>15</span><span>30 dias</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium" style={{ color: '#5A7A68' }}>Hóspedes no período</p>
+                    {['homens', 'mulheres', 'criancas'].map(campo => (
+                      <div key={campo} className="flex items-center justify-between">
+                        <span className="text-sm capitalize" style={{ color: '#1A2E25' }}>
+                          {campo === 'homens' ? 'Homens' : campo === 'mulheres' ? 'Mulheres' : 'Crianças'}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setHospedesLista(h => h ? { ...h, [campo]: Math.max(0, (h[campo as keyof typeof h] as number) - 1) } : h)}
+                            className="w-8 h-8 rounded-full" style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
+                          <span className="w-5 text-center font-semibold" style={{ color: '#1A2E25' }}>
+                            {hospedesLista[campo as keyof typeof hospedesLista]}
+                          </span>
+                          <button onClick={() => setHospedesLista(h => h ? { ...h, [campo]: (h[campo as keyof typeof h] as number) + 1 } : h)}
+                            className="w-8 h-8 rounded-full" style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button onClick={() => setListaGerada(true)}
+                  className="w-full py-4 rounded-2xl font-semibold text-sm"
+                  style={{ background: '#128C7E', color: '#fff' }}>
+                  Gerar lista consolidada ({diasLista} dias)
+                </button>
+
+                {listaGerada && grupos.length > 0 && (
+                  <>
+                    <div className="flex gap-2">
+                      <button onClick={enviarWhatsApp}
+                        className="flex-1 py-3 rounded-2xl text-sm font-semibold"
+                        style={{ background: '#25D366', color: '#fff' }}>WhatsApp</button>
+                      <button onClick={exportarPDF} disabled={gerando}
+                        className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-60"
+                        style={{ background: '#128C7E', color: '#fff' }}>
+                        {gerando ? 'Gerando...' : 'Baixar PDF'}
+                      </button>
+                    </div>
+                    {grupos.map(grupo => (
+                      <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                        <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                          <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>{grupo.setor}</p>
+                        </div>
+                        {grupo.itens.map((item, i) => (
+                          <div key={i} className="px-5 py-4 flex items-center justify-between"
+                            style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                            <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
+                            <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>{item.compra}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── ABA CMV ── */}
+        {aba === 'cmv' && (
+          <>
+            {/* Resumo F&B */}
+            {custoNoite > 0 && (
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>F&B por noite</p>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: '#5A7A68' }}>Custo de alimentação</span>
+                    <span className="font-semibold" style={{ color: '#1A2E25' }}>{formatarMoeda(custoNoite)}</span>
+                  </div>
+                  {pousada.valorDiaria > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: '#5A7A68' }}>Receita da diária</span>
+                        <span className="font-semibold" style={{ color: '#1A2E25' }}>{formatarMoeda(receita)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm pt-2" style={{ borderTop: '1px solid #E4F2EA' }}>
+                        <span className="font-semibold" style={{ color: '#5A7A68' }}>CMV Alimentação / Diária</span>
+                        <span className="font-bold text-base" style={{ color: statusCMV(cmvFB).color }}>
+                          {cmvFB.toFixed(1)}% — {statusCMV(cmvFB).label}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* CMV por refeição */}
+            {pousada.cardapio.length > 0 && (
+              <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                  <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>Custo por refeição / pessoa</p>
+                </div>
+                {pousada.cardapio.map((ref, i) => {
+                  const custo = custoRefeicaoPorPessoa(ref)
+                  return (
+                    <div key={ref.id} className="px-5 py-4 flex items-center justify-between"
+                      style={{ borderBottom: i < pousada.cardapio.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>{ref.nome}</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{TIPO_LABELS[ref.tipo]}</p>
+                      </div>
+                      <span className="font-semibold" style={{ color: custo > 0 ? '#128C7E' : '#C8E4D4' }}>
+                        {custo > 0 ? formatarMoeda(custo) : '—'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Preços dos ingredientes */}
+            <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+              <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>Preços dos ingredientes</p>
+                <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>Preço de compra por kg</p>
+              </div>
+              {ingredientes.length === 0 ? (
+                <div className="px-5 py-6 text-center">
+                  <p className="text-sm" style={{ color: '#5A7A68' }}>Adicione refeições no Cardápio primeiro</p>
+                </div>
+              ) : ingredientes.map((nome, i) => {
+                const preco = getPreco(nome)
+                return (
+                  <div key={nome} className="px-5 py-4 flex items-center justify-between"
+                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                    <p className="text-sm flex-1" style={{ color: '#1A2E25' }}>{nome}</p>
+                    {editandoPreco === nome ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
+                        <input type="number" value={editPrecoInput}
+                          onChange={e => setEditPrecoInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') salvarPreco(nome, parseFloat(editPrecoInput)); if (e.key === 'Escape') setEditandoPreco(null) }}
+                          autoFocus step="0.01" min="0" placeholder="0,00"
+                          className="w-20 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
+                          style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
+                        <span className="text-xs" style={{ color: '#7BA892' }}>/kg</span>
+                        <button onClick={() => salvarPreco(nome, parseFloat(editPrecoInput))}
+                          className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
+                        <button onClick={() => setEditandoPreco(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium" style={{ color: preco > 0 ? '#1A2E25' : '#C8E4D4' }}>
+                          {preco > 0 ? `R$ ${preco.toFixed(2)}/kg` : '—'}
+                        </span>
+                        <button onClick={() => { setEditandoPreco(nome); setEditPrecoInput(preco > 0 ? String(preco) : '') }}
+                          className="text-base opacity-40 hover:opacity-80" style={{ color: '#7BA892' }}>✎</button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </main>
+  )
+}

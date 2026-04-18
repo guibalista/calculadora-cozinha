@@ -53,12 +53,6 @@ export function agruparPorSetor(itens: ItemLista[]): GrupoSetor[] {
     .map(s => ({ setor: s, itens: grupos[s]!.sort((a, b) => b.brutoKg - a.brutoKg) }))
 }
 
-function fmt(kg: number): string {
-  if (kg < 0.001) return `${(kg * 1000000).toFixed(0)}mg`
-  if (kg < 1) return `${(kg * 1000).toFixed(0)}g`
-  return `${kg.toFixed(3)}kg`
-}
-
 export function gerarTextoWhatsApp(params: {
   nomeEvento: string
   data?: string
@@ -105,7 +99,7 @@ export function gerarHTMLImpressao(params: {
         <div class="setor-titulo">${grupo.setor}</div>
         <table>
           <thead>
-            <tr><th>Ingrediente</th><th>Quantidade</th><th>Unidade</th></tr>
+            <tr><th>Ingrediente</th><th>Comprar</th></tr>
           </thead>
           <tbody>${linhasItens}</tbody>
         </table>
@@ -132,8 +126,7 @@ export function gerarHTMLImpressao(params: {
     th { text-align: left; padding: 6px 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; color: #717171; letter-spacing: 0.5px; }
     td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
     td.nome { font-weight: 500; }
-    td.qtd { font-weight: 700; width: 90px; }
-    td.und-cell { color: #9B8B7A; width: 100px; font-size: 12px; }
+    td.qtd { font-weight: 700; color: #128C7E; width: 120px; }
     .footer { margin-top: 32px; border-top: 1px solid #eee; padding-top: 12px; color: #bbb; font-size: 11px; text-align: center; }
     @media print { body { padding: 16px; } }
   </style>
