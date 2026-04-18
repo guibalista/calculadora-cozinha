@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
-import { formatarPeso } from '@/lib/lista-compras'
 import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
 import { baixarPDF } from '@/lib/exportar-pdf'
+import { converterParaCompra } from '@/lib/unidades-compra'
 
 interface Ingrediente { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
 interface Prato { id: string; nome: string; ingredientes: Ingrediente[] }
@@ -15,30 +15,6 @@ interface Estadia { id: string; nome: string; homens: number; mulheres: number; 
 type Cenario = 'moderado' | 'conservador' | 'agressivo'
 const FATORES: Record<Cenario, number> = { moderado: 0.85, conservador: 1.00, agressivo: 1.25 }
 
-const PESOS_UNITARIOS: Record<string, { unidade: string; gramas: number }> = {
-  'Cebola': { unidade: 'und.', gramas: 150 }, 'Alho': { unidade: 'cabeça', gramas: 50 },
-  'Tomate': { unidade: 'und.', gramas: 120 }, 'Limão': { unidade: 'und.', gramas: 80 },
-  'Laranja': { unidade: 'und.', gramas: 200 }, 'Banana': { unidade: 'und.', gramas: 150 },
-  'Maçã': { unidade: 'und.', gramas: 180 }, 'Batata inglesa': { unidade: 'und.', gramas: 180 },
-  'Batata-doce': { unidade: 'und.', gramas: 200 }, 'Cenoura': { unidade: 'und.', gramas: 100 },
-  'Abobrinha': { unidade: 'und.', gramas: 350 }, 'Berinjela': { unidade: 'und.', gramas: 400 },
-  'Brócolis': { unidade: 'und.', gramas: 500 }, 'Couve-flor': { unidade: 'und.', gramas: 700 },
-  'Pimentão vermelho': { unidade: 'und.', gramas: 150 }, 'Pimentão verde': { unidade: 'und.', gramas: 150 },
-  'Pimentão amarelo': { unidade: 'und.', gramas: 150 }, 'Ovos': { unidade: 'und.', gramas: 60 },
-  'Pão francês': { unidade: 'und.', gramas: 50 }, 'Pão de forma': { unidade: 'pacote', gramas: 500 },
-  'Manga': { unidade: 'und.', gramas: 300 }, 'Mamão': { unidade: 'und.', gramas: 800 },
-  'Abacaxi': { unidade: 'und.', gramas: 1200 }, 'Melão': { unidade: 'und.', gramas: 1200 },
-  'Melancia': { unidade: 'und.', gramas: 5000 }, 'Coco fresco': { unidade: 'und.', gramas: 900 },
-  'Mandioca': { unidade: 'und.', gramas: 800 }, 'Milho verde': { unidade: 'und.', gramas: 250 },
-  'Frango inteiro': { unidade: 'und.', gramas: 1800 },
-}
-
-function converterUnidade(nome: string, brutoKg: number): string | null {
-  const u = PESOS_UNITARIOS[nome]
-  if (!u) return null
-  const qtd = Math.ceil((brutoKg * 1000) / u.gramas)
-  return qtd >= 1 ? `≈ ${qtd} ${u.unidade}` : null
-}
 
 export default function ListaComprasPage() {
   const { id } = useParams<{ id: string }>()
@@ -85,7 +61,7 @@ export default function ListaComprasPage() {
 
   const itensList: ItemLista[] = Object.entries(totaisMap).map(([nome, v]) => {
     const bruto = overrides[nome] ?? v.bruto
-    return { nome, categoria: v.categoria, brutoKg: bruto, liquidoKg: v.liquido, unidade: converterUnidade(nome, bruto) }
+    return { nome, categoria: v.categoria, brutoKg: bruto, liquidoKg: v.liquido, compra: converterParaCompra(nome, bruto) }
   })
   const grupos = agruparPorSetor(itensList)
   const totalItens = itensList.length
@@ -215,10 +191,7 @@ export default function ListaComprasPage() {
               {grupo.itens.map((item, i) => (
                 <div key={i} className="px-5 py-4 flex items-center justify-between"
                   style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                  <div>
-                    <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
-                    {item.unidade && <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{item.unidade}</p>}
-                  </div>
+                  <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
                   <div className="text-right ml-4">
                     {editando === item.nome ? (
                       <div className="flex items-center gap-1 justify-end">
@@ -237,18 +210,17 @@ export default function ListaComprasPage() {
                       <div className="flex items-center gap-1.5 justify-end">
                         <p className="font-semibold text-base"
                           style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
-                          {formatarPeso(item.brutoKg)}
+                          {item.compra}
                         </p>
                         <button
                           onClick={() => iniciarEdit(item.nome, item.brutoKg)}
                           className="text-base opacity-40 hover:opacity-80 transition-opacity"
                           style={{ color: '#7BA892', lineHeight: 1 }}
-                          title="Editar quantidade">
+                          title="Ajustar">
                           ✎
                         </button>
                       </div>
                     )}
-                    <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>{formatarPeso(item.liquidoKg)} líq.</p>
                   </div>
                 </div>
               ))}

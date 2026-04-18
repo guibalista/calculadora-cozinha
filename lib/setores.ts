@@ -33,7 +33,7 @@ export interface ItemLista {
   categoria: string
   brutoKg: number
   liquidoKg: number
-  unidade?: string | null
+  compra: string
 }
 
 export interface GrupoSetor {
@@ -77,8 +77,7 @@ export function gerarTextoWhatsApp(params: {
   for (const grupo of params.grupos) {
     linhas.push(`*${grupo.setor.toUpperCase()}*`)
     for (const item of grupo.itens) {
-      const und = item.unidade ? ` (${item.unidade})` : ''
-      linhas.push(`• ${item.nome}: ${fmt(item.brutoKg)}${und}`)
+      linhas.push(`• ${item.nome}: ${item.compra}`)
     }
     linhas.push('')
   }
@@ -95,12 +94,10 @@ export function gerarHTMLImpressao(params: {
 }): string {
   const linhasGrupos = params.grupos.map(grupo => {
     const linhasItens = grupo.itens.map(item => {
-      const und = item.unidade ? `<span class="und">${item.unidade}</span>` : ''
       return `
         <tr>
           <td class="nome">${item.nome}</td>
-          <td class="qtd">${fmt(item.brutoKg)}</td>
-          <td class="und-cell">${und}</td>
+          <td class="qtd">${item.compra}</td>
         </tr>`
     }).join('')
     return `
