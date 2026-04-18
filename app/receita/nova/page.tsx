@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation'
 
 function Contador({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
-    <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #EBEBEB' }}>
-      <p className="font-medium text-base" style={{ color: '#222' }}>{label}</p>
+    <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #E4F2EA' }}>
+      <p className="font-medium text-base" style={{ color: '#1A2E25' }}>{label}</p>
       <div className="flex items-center gap-4">
         <button type="button" onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-medium"
-          style={{ border: '1.5px solid #DDDDDD', color: '#222', background: '#fff' }}>−</button>
-        <span className="w-5 text-center font-semibold text-lg" style={{ color: '#222' }}>{value}</span>
+          className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium"
+          style={{ border: '1.5px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
+        <span className="w-6 text-center font-semibold text-lg" style={{ color: '#1A2E25' }}>{value}</span>
         <button type="button" onClick={() => onChange(value + 1)}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-medium"
-          style={{ border: '1.5px solid #222', color: '#fff', background: '#222' }}>+</button>
+          className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium"
+          style={{ background: '#128C7E', color: '#fff' }}>+</button>
       </div>
     </div>
   )
@@ -45,42 +45,42 @@ export default function NovaReceitaPage() {
   }
 
   return (
-    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F7F5F2' }}>
+    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
       <div className="mb-8">
-        <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</Link>
+        <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Voltar</Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Planejar receita</h1>
-      <p className="text-sm mb-8" style={{ color: '#717171' }}>Monte o cardápio de um evento ou refeição</p>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Planejar receita</h1>
+      <p className="text-sm mb-8" style={{ color: '#5A7A68' }}>Monte o cardápio de um evento ou refeição</p>
 
       {/* Nome */}
-      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #EBEBEB' }}>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#222' }}>Nome do evento</label>
+      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #D4EDE0' }}>
+        <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>Nome do evento</label>
         <input type="text" value={nome} onChange={e => setNome(e.target.value)}
           placeholder="Ex: Churrasco de sábado, Almoço de domingo"
           className="w-full px-4 py-3 rounded-2xl border text-base outline-none"
-          style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
       </div>
 
       {/* Data (opcional) */}
-      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #EBEBEB' }}>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#222' }}>
-          Data do evento <span style={{ color: '#BBBBBB' }}>(opcional)</span>
+      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #D4EDE0' }}>
+        <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>
+          Data do evento <span style={{ color: '#7BA892' }}>(opcional)</span>
         </label>
         <input type="date" value={data} onChange={e => setData(e.target.value)}
           className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-          style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
       </div>
 
       {/* Pessoas */}
-      <div className="bg-white rounded-3xl px-5 mb-6" style={{ border: '1.5px solid #EBEBEB' }}>
-        <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#222' }}>Número de pessoas</p>
-        <p className="text-sm pb-2" style={{ color: '#717171' }}>Informe para calcular as quantidades</p>
+      <div className="bg-white rounded-3xl px-5 mb-6" style={{ border: '1.5px solid #D4EDE0' }}>
+        <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#1A2E25' }}>Número de pessoas</p>
+        <p className="text-sm pb-2" style={{ color: '#5A7A68' }}>Informe para calcular as quantidades</p>
         <Contador label="Homens" value={homens} onChange={setHomens} />
         <Contador label="Mulheres" value={mulheres} onChange={setMulheres} />
         <Contador label="Crianças" value={criancas} onChange={setCriancas} />
         {total > 0 && (
-          <p className="text-sm py-4 font-medium" style={{ color: '#9B8B7A' }}>
+          <p className="text-sm py-4 font-medium" style={{ color: '#7BA892' }}>
             {total} pessoa{total > 1 ? 's' : ''}
           </p>
         )}
@@ -88,7 +88,7 @@ export default function NovaReceitaPage() {
 
       <button onClick={criar} disabled={!podeCriar}
         className="w-full py-4 rounded-2xl font-semibold text-base disabled:opacity-40"
-        style={{ background: '#222', color: '#fff' }}>
+        style={{ background: '#128C7E', color: '#fff' }}>
         Montar cardápio
       </button>
     </main>

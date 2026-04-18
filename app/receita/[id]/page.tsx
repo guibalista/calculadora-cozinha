@@ -35,36 +35,36 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
         <input type="text" value={termo} onChange={e => buscar(e.target.value)}
           placeholder="Adicionar ingrediente..."
           className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-          style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
         {sugestoes.length > 0 && (
           <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-            style={{ background: '#fff', border: '1.5px solid #EBEBEB' }}>
+            style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
             {sugestoes.map(s => (
               <button key={s.nome} onClick={() => selecionar(s)}
                 className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                style={{ borderBottom: '1px solid #F0EEEB', color: '#222' }}>
+                style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
                 <span>{s.nome}</span>
-                <span className="text-xs" style={{ color: '#9B8B7A' }}>{s.percapitaGramas}g/p</span>
+                <span className="text-xs" style={{ color: '#7BA892' }}>{s.percapitaGramas}g/p</span>
               </button>
             ))}
           </div>
         )}
       </div>
       {selecionado && (
-        <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#F0EEEB' }}>
-          <span className="flex-1 text-sm font-medium" style={{ color: '#222' }}>{selecionado.nome}</span>
+        <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#E8F5EE' }}>
+          <span className="flex-1 text-sm font-medium" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
           <div className="flex items-center gap-1">
             <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
               className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-              style={{ border: '1.5px solid #DDDDDD', background: '#fff' }}>−</button>
+              style={{ border: '1.5px solid #C8E4D4', background: '#fff' }}>−</button>
             <input type="number" value={gramas} onChange={e => setGramas(e.target.value)}
-              className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#222' }} />
-            <span className="text-xs" style={{ color: '#9B8B7A' }}>g</span>
+              className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
+            <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
             <button onClick={() => setGramas(v => String(parseFloat(v || '0') + 10))}
               className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-              style={{ border: '1.5px solid #222', background: '#222', color: '#fff' }}>+</button>
+              style={{ background: '#128C7E', color: '#fff' }}>+</button>
           </div>
-          <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#222', color: '#fff' }}>
+          <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
             Adicionar
           </button>
         </div>
@@ -133,59 +133,57 @@ export default function ReceitaPage() {
   }
 
   if (!evento) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F7F5F2' }}>
-      <p style={{ color: '#717171' }}>Carregando...</p>
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
+      <p style={{ color: '#5A7A68' }}>Carregando...</p>
     </div>
   )
 
   const equiv = totalEquivalente({ homens: evento.homens, mulheres: evento.mulheres, criancas: evento.criancas })
 
   return (
-    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F7F5F2' }}>
+    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
       <div className="px-5 pt-8 pb-4">
         <div className="flex items-center justify-between mb-6">
-          <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#222' }}>← Dashboard</Link>
+          <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Dashboard</Link>
           <Link href={`/receita/${id}/lista`}
             className="px-4 py-2.5 rounded-2xl text-sm font-semibold"
-            style={{ background: '#222', color: '#fff' }}>
+            style={{ background: '#128C7E', color: '#fff' }}>
             Lista de compras 🛒
           </Link>
         </div>
-        <h1 className="text-xl font-bold mb-0.5" style={{ color: '#222' }}>{evento.nome}</h1>
-        <p className="text-sm" style={{ color: '#717171' }}>
+        <h1 className="text-xl font-bold mb-0.5" style={{ color: '#1A2E25' }}>{evento.nome}</h1>
+        <p className="text-sm" style={{ color: '#5A7A68' }}>
           {evento.totalPessoas} pessoas
           {evento.data && ` · ${new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`}
         </p>
       </div>
 
       <div className="px-5 space-y-4 pb-10">
-        {/* Cabeçalho cardápio */}
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-base" style={{ color: '#222' }}>Cardápio</p>
+          <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>Cardápio</p>
           {evento.refeicoes.length > 0 && !adicionando && (
             <button onClick={() => setAdicionando(true)}
-              className="text-sm font-semibold px-3 py-1.5 rounded-xl"
-              style={{ background: '#222', color: '#fff' }}>
+              className="text-sm font-semibold px-4 py-2 rounded-xl"
+              style={{ background: '#128C7E', color: '#fff' }}>
               + Refeição
             </button>
           )}
         </div>
 
-        {/* Refeições salvas */}
         {evento.refeicoes.map(ref => (
-          <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
+          <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
             <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold" style={{ color: '#222' }}>{ref.nome}</p>
-              <button onClick={() => removerRefeicao(ref.id)} className="text-lg px-1" style={{ color: '#BBBBBB' }}>×</button>
+              <p className="font-semibold" style={{ color: '#1A2E25' }}>{ref.nome}</p>
+              <button onClick={() => removerRefeicao(ref.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
             </div>
             <div className="space-y-1">
               {ref.ingredientes.map((ing, i) => {
                 const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
                 return (
                   <div key={i} className="flex justify-between text-sm py-1.5"
-                    style={{ borderBottom: i < ref.ingredientes.length - 1 ? '1px solid #F0EEEB' : 'none' }}>
-                    <span style={{ color: '#717171' }}>{ing.nome}</span>
-                    <span className="font-medium" style={{ color: '#222' }}>{formatarPeso(bruto)}</span>
+                    style={{ borderBottom: i < ref.ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                    <span style={{ color: '#5A7A68' }}>{ing.nome}</span>
+                    <span className="font-medium" style={{ color: '#1A2E25' }}>{formatarPeso(bruto)}</span>
                   </div>
                 )
               })}
@@ -193,25 +191,24 @@ export default function ReceitaPage() {
           </div>
         ))}
 
-        {/* Formulário */}
         {adicionando ? (
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #222' }}>
-            <p className="font-semibold mb-4" style={{ color: '#222' }}>Nova refeição</p>
+          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
+            <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição</p>
 
             <div className="mb-4 relative">
               <input type="text" value={nomeRefeicao} onChange={e => handleNome(e.target.value)}
                 placeholder="Nome (ex: Feijoada, Frango assado...)"
                 className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-                style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+                style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
               {sugestoesReceita.length > 0 && (
                 <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-                  style={{ background: '#fff', border: '1.5px solid #EBEBEB' }}>
+                  style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
                   {sugestoesReceita.map(r => (
                     <button key={r.id} onClick={() => selecionarReceita(r)}
                       className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                      style={{ borderBottom: '1px solid #F0EEEB', color: '#222' }}>
+                      style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
                       <span className="font-medium">{r.nome}</span>
-                      <span className="text-xs" style={{ color: '#9B8B7A' }}>{r.ingredientes.length} ingredientes</span>
+                      <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
                     </button>
                   ))}
                 </div>
@@ -219,29 +216,29 @@ export default function ReceitaPage() {
             </div>
 
             {receitaDaBase && ingredientes.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#F0EEEB' }}>
-                <span className="text-xs font-medium flex-1" style={{ color: '#222' }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#E8F5EE' }}>
+                <span className="text-xs font-medium flex-1" style={{ color: '#1A2E25' }}>
                   {ingredientes.length} ingredientes carregados da base
                 </span>
-                <span className="text-xs" style={{ color: '#9B8B7A' }}>Ajuste se quiser</span>
+                <span className="text-xs" style={{ color: '#7BA892' }}>Ajuste se quiser</span>
               </div>
             )}
 
             {ingredientes.length > 0 && (
-              <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #EBEBEB' }}>
+              <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
                 {ingredientes.map((ing, i) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #F0EEEB' : 'none' }}>
-                    <span className="text-sm flex-1" style={{ color: '#222' }}>{ing.nome}</span>
+                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                    <span className="text-sm flex-1" style={{ color: '#1A2E25' }}>{ing.nome}</span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => ajustarGramas(i, -10)}
-                        className="w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                        style={{ border: '1px solid #DDD', background: '#fff' }}>−</button>
-                      <span className="text-sm font-medium w-12 text-center" style={{ color: '#222' }}>{ing.gramasPorPessoa}g</span>
+                        className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
+                        style={{ border: '1px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
+                      <span className="text-sm font-medium w-12 text-center" style={{ color: '#1A2E25' }}>{ing.gramasPorPessoa}g</span>
                       <button onClick={() => ajustarGramas(i, 10)}
-                        className="w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                        style={{ border: '1px solid #222', background: '#222', color: '#fff' }}>+</button>
-                      <button onClick={() => removerIngrediente(i)} className="ml-1 text-base px-1" style={{ color: '#BBBBBB' }}>×</button>
+                        className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
+                        style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                      <button onClick={() => removerIngrediente(i)} className="ml-1 text-base px-1" style={{ color: '#7BA892' }}>×</button>
                     </div>
                   </div>
                 ))}
@@ -250,15 +247,15 @@ export default function ReceitaPage() {
 
             <InputIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
 
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-3 mt-4">
               <button onClick={cancelar}
                 className="flex-1 py-3 rounded-2xl text-sm font-medium"
-                style={{ border: '1.5px solid #DDDDDD', color: '#717171', background: '#fff' }}>
+                style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
                 Cancelar
               </button>
               <button onClick={salvarRefeicao} disabled={!nomeRefeicao || ingredientes.length === 0}
                 className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
-                style={{ background: '#222', color: '#fff' }}>
+                style={{ background: '#128C7E', color: '#fff' }}>
                 Salvar refeição
               </button>
             </div>
@@ -266,7 +263,7 @@ export default function ReceitaPage() {
         ) : (
           <button onClick={() => setAdicionando(true)}
             className="w-full py-4 rounded-3xl text-sm font-semibold"
-            style={{ border: '1.5px dashed #DDDDDD', color: '#222', background: '#fff' }}>
+            style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
             + Adicionar refeição ao cardápio
           </button>
         )}

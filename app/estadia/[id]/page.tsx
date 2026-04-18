@@ -12,7 +12,6 @@ interface Prato { id: string; nome: string; ingredientes: IngPrato[] }
 interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
 interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numeroDias: number; dias: Dia[] }
 
-// ─── Autocomplete ingrediente manual ─────────────────────────
 function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => void }) {
   const [termo, setTermo] = useState('')
   const [sugestoes, setSugestoes] = useState<Ingrediente[]>([])
@@ -37,36 +36,36 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
         <input type="text" value={termo} onChange={e => buscar(e.target.value)}
           placeholder="Adicionar ingrediente..."
           className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-          style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
         {sugestoes.length > 0 && (
           <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-            style={{ background: '#fff', border: '1.5px solid #EBEBEB' }}>
+            style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
             {sugestoes.map(s => (
               <button key={s.nome} onClick={() => selecionar(s)}
-                className="w-full text-left px-4 py-3 text-sm flex items-center justify-between active:opacity-60"
-                style={{ borderBottom: '1px solid #F0EEEB', color: '#222' }}>
+                className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
+                style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
                 <span>{s.nome}</span>
-                <span className="text-xs" style={{ color: '#9B8B7A' }}>{s.percapitaGramas}g/p</span>
+                <span className="text-xs" style={{ color: '#7BA892' }}>{s.percapitaGramas}g/p</span>
               </button>
             ))}
           </div>
         )}
       </div>
       {selecionado && (
-        <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#F0EEEB' }}>
-          <span className="flex-1 text-sm font-medium" style={{ color: '#222' }}>{selecionado.nome}</span>
+        <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#E8F5EE' }}>
+          <span className="flex-1 text-sm font-medium" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
           <div className="flex items-center gap-1">
             <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
               className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-              style={{ border: '1.5px solid #DDDDDD', background: '#fff' }}>−</button>
+              style={{ border: '1.5px solid #C8E4D4', background: '#fff' }}>−</button>
             <input type="number" value={gramas} onChange={e => setGramas(e.target.value)}
-              className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#222' }} />
-            <span className="text-xs" style={{ color: '#9B8B7A' }}>g</span>
+              className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
+            <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
             <button onClick={() => setGramas(v => String(parseFloat(v || '0') + 10))}
               className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-              style={{ border: '1.5px solid #222', background: '#222', color: '#fff' }}>+</button>
+              style={{ background: '#128C7E', color: '#fff' }}>+</button>
           </div>
-          <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#222', color: '#fff' }}>
+          <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
             Adicionar
           </button>
         </div>
@@ -75,13 +74,11 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
   )
 }
 
-// ─── Página principal ─────────────────────────────────────────
 export default function EstadiaPage() {
   const { id } = useParams<{ id: string }>()
   const [estadia, setEstadia] = useState<Estadia | null>(null)
   const [diaAtivo, setDiaAtivo] = useState(0)
 
-  // Formulário de nova refeição
   const [adicionandoPrato, setAdicionandoPrato] = useState(false)
   const [nomePrato, setNomePrato] = useState('')
   const [ingredientes, setIngredientes] = useState<IngPrato[]>([])
@@ -101,7 +98,6 @@ export default function EstadiaPage() {
     setEstadia(nova)
   }
 
-  // Receita name search
   function handleNomePrato(v: string) {
     setNomePrato(v)
     setReceitaDaBase(false)
@@ -151,8 +147,8 @@ export default function EstadiaPage() {
   }
 
   if (!estadia) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F7F5F2' }}>
-      <p style={{ color: '#717171' }}>Carregando...</p>
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
+      <p style={{ color: '#5A7A68' }}>Carregando...</p>
     </div>
   )
 
@@ -165,19 +161,19 @@ export default function EstadiaPage() {
   const totalPessoas = hospedesTotais.homens + hospedesTotais.mulheres + hospedesTotais.criancas
 
   return (
-    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F7F5F2' }}>
-      {/* Header */}
+    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
+      {/* Cabeçalho */}
       <div className="px-5 pt-8 pb-4">
         <div className="flex items-center justify-between mb-6">
-          <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#222' }}>← Estadias</Link>
+          <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Estadias</Link>
           <Link href={`/estadia/${id}/lista`}
             className="px-4 py-2.5 rounded-2xl text-sm font-semibold"
-            style={{ background: '#222', color: '#fff' }}>
+            style={{ background: '#128C7E', color: '#fff' }}>
             Lista de compras 🛒
           </Link>
         </div>
-        <h1 className="text-xl font-bold mb-0.5" style={{ color: '#222' }}>{estadia.nome}</h1>
-        <p className="text-sm" style={{ color: '#717171' }}>
+        <h1 className="text-xl font-bold mb-0.5" style={{ color: '#1A2E25' }}>{estadia.nome}</h1>
+        <p className="text-sm" style={{ color: '#5A7A68' }}>
           {estadia.homens + estadia.mulheres + estadia.criancas} hóspedes · {estadia.numeroDias} dias
         </p>
       </div>
@@ -188,12 +184,12 @@ export default function EstadiaPage() {
           <button key={i} onClick={() => { setDiaAtivo(i); cancelarPrato() }}
             className="flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-medium"
             style={diaAtivo === i
-              ? { background: '#222', color: '#fff' }
-              : { background: '#fff', color: '#717171', border: '1.5px solid #EBEBEB' }}>
+              ? { background: '#128C7E', color: '#fff' }
+              : { background: '#fff', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
             {d.label}
             {d.pratos.length > 0 && (
               <span className="ml-1.5 w-4 h-4 rounded-full text-xs inline-flex items-center justify-center"
-                style={{ background: diaAtivo === i ? 'rgba(255,255,255,0.25)' : '#F0EEEB', color: diaAtivo === i ? '#fff' : '#9B8B7A' }}>
+                style={{ background: diaAtivo === i ? 'rgba(255,255,255,0.25)' : '#E4F2EA', color: diaAtivo === i ? '#fff' : '#7BA892' }}>
                 {d.pratos.length}
               </span>
             )}
@@ -203,8 +199,8 @@ export default function EstadiaPage() {
 
       <div className="px-5 space-y-4 pb-10">
         {/* Convidados extras */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
-          <p className="font-semibold text-sm mb-3" style={{ color: '#222' }}>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+          <p className="font-semibold text-sm mb-4" style={{ color: '#1A2E25' }}>
             Convidados extras · {totalPessoas} pessoas no total
           </p>
           <div className="grid grid-cols-3 gap-3">
@@ -214,15 +210,15 @@ export default function EstadiaPage() {
               { label: 'Crianças', campo: 'extrasCriancas' as const, val: dia.extrasCriancas },
             ]).map(({ label, campo, val }) => (
               <div key={campo} className="text-center">
-                <p className="text-xs mb-2" style={{ color: '#717171' }}>{label}</p>
+                <p className="text-xs mb-2" style={{ color: '#5A7A68' }}>{label}</p>
                 <div className="flex items-center justify-center gap-2">
                   <button onClick={() => atualizarExtras(campo, val - 1)}
-                    className="w-7 h-7 rounded-full text-sm"
-                    style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}>−</button>
-                  <span className="font-semibold w-4 text-center text-sm" style={{ color: '#222' }}>{val}</span>
+                    className="w-8 h-8 rounded-full text-sm"
+                    style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
+                  <span className="font-semibold w-5 text-center text-sm" style={{ color: '#1A2E25' }}>{val}</span>
                   <button onClick={() => atualizarExtras(campo, val + 1)}
-                    className="w-7 h-7 rounded-full text-sm"
-                    style={{ border: '1.5px solid #222', background: '#222', color: '#fff' }}>+</button>
+                    className="w-8 h-8 rounded-full text-sm"
+                    style={{ background: '#128C7E', color: '#fff' }}>+</button>
                 </div>
               </div>
             ))}
@@ -231,31 +227,31 @@ export default function EstadiaPage() {
 
         {/* Cardápio do dia */}
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-base" style={{ color: '#222' }}>Cardápio do dia</p>
+          <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>Cardápio do dia</p>
           {dia.pratos.length > 0 && !adicionandoPrato && (
             <button onClick={() => setAdicionandoPrato(true)}
-              className="text-sm font-semibold px-3 py-1.5 rounded-xl"
-              style={{ background: '#222', color: '#fff' }}>
+              className="text-sm font-semibold px-4 py-2 rounded-xl"
+              style={{ background: '#128C7E', color: '#fff' }}>
               + Refeição
             </button>
           )}
         </div>
 
-        {/* Pratos salvos */}
+        {/* Refeições salvas */}
         {dia.pratos.map(prato => (
-          <div key={prato.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
+          <div key={prato.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
             <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold" style={{ color: '#222' }}>{prato.nome}</p>
-              <button onClick={() => removerPrato(prato.id)} className="text-lg px-1" style={{ color: '#BBBBBB' }}>×</button>
+              <p className="font-semibold" style={{ color: '#1A2E25' }}>{prato.nome}</p>
+              <button onClick={() => removerPrato(prato.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
             </div>
             <div className="space-y-1">
               {prato.ingredientes.map((ing, i) => {
                 const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
                 return (
                   <div key={i} className="flex justify-between items-center text-sm py-1.5"
-                    style={{ borderBottom: i < prato.ingredientes.length - 1 ? '1px solid #F0EEEB' : 'none' }}>
-                    <span style={{ color: '#717171' }}>{ing.nome}</span>
-                    <span className="font-medium" style={{ color: '#222' }}>{formatarPeso(bruto)}</span>
+                    style={{ borderBottom: i < prato.ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                    <span style={{ color: '#5A7A68' }}>{ing.nome}</span>
+                    <span className="font-medium" style={{ color: '#1A2E25' }}>{formatarPeso(bruto)}</span>
                   </div>
                 )
               })}
@@ -265,75 +261,70 @@ export default function EstadiaPage() {
 
         {/* Formulário nova refeição */}
         {adicionandoPrato ? (
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #222' }}>
-            <p className="font-semibold mb-4" style={{ color: '#222' }}>Nova refeição</p>
+          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
+            <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição</p>
 
-            {/* Busca de receita */}
             <div className="mb-4 relative">
               <input type="text" value={nomePrato} onChange={e => handleNomePrato(e.target.value)}
                 placeholder="Nome da refeição (ex: Feijoada, Frango assado...)"
                 className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-                style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
-
+                style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
               {sugestoesReceita.length > 0 && (
                 <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-                  style={{ background: '#fff', border: '1.5px solid #EBEBEB' }}>
+                  style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
                   {sugestoesReceita.map(r => (
                     <button key={r.id} onClick={() => selecionarReceita(r)}
-                      className="w-full text-left px-4 py-3 text-sm flex items-center justify-between active:opacity-60"
-                      style={{ borderBottom: '1px solid #F0EEEB', color: '#222' }}>
+                      className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
+                      style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
                       <span className="font-medium">{r.nome}</span>
-                      <span className="text-xs" style={{ color: '#9B8B7A' }}>{r.ingredientes.length} ingredientes</span>
+                      <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Badge receita da base */}
             {receitaDaBase && ingredientes.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#F0EEEB' }}>
-                <span className="text-xs font-medium flex-1" style={{ color: '#222' }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#E8F5EE' }}>
+                <span className="text-xs font-medium flex-1" style={{ color: '#1A2E25' }}>
                   {ingredientes.length} ingredientes carregados da base
                 </span>
-                <span className="text-xs" style={{ color: '#9B8B7A' }}>Ajuste abaixo se quiser</span>
+                <span className="text-xs" style={{ color: '#7BA892' }}>Ajuste se quiser</span>
               </div>
             )}
 
-            {/* Lista de ingredientes */}
             {ingredientes.length > 0 && (
-              <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #EBEBEB' }}>
+              <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
                 {ingredientes.map((ing, i) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #F0EEEB' : 'none' }}>
-                    <span className="text-sm flex-1" style={{ color: '#222' }}>{ing.nome}</span>
+                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                    <span className="text-sm flex-1" style={{ color: '#1A2E25' }}>{ing.nome}</span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => ajustarGramas(i, -10)}
-                        className="w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                        style={{ border: '1px solid #DDD', color: '#222', background: '#fff' }}>−</button>
-                      <span className="text-sm font-medium w-12 text-center" style={{ color: '#222' }}>{ing.gramasPorPessoa}g</span>
+                        className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
+                        style={{ border: '1px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
+                      <span className="text-sm font-medium w-12 text-center" style={{ color: '#1A2E25' }}>{ing.gramasPorPessoa}g</span>
                       <button onClick={() => ajustarGramas(i, 10)}
-                        className="w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                        style={{ border: '1px solid #222', background: '#222', color: '#fff' }}>+</button>
-                      <button onClick={() => removerIngrediente(i)} className="ml-1 text-base px-1" style={{ color: '#BBBBBB' }}>×</button>
+                        className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
+                        style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                      <button onClick={() => removerIngrediente(i)} className="ml-1 text-base px-1" style={{ color: '#7BA892' }}>×</button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Adicionar ingrediente extra */}
             <InputIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
 
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-3 mt-4">
               <button onClick={cancelarPrato}
                 className="flex-1 py-3 rounded-2xl text-sm font-medium"
-                style={{ border: '1.5px solid #DDDDDD', color: '#717171', background: '#fff' }}>
+                style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
                 Cancelar
               </button>
               <button onClick={salvarPrato} disabled={!nomePrato || ingredientes.length === 0}
                 className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
-                style={{ background: '#222', color: '#fff' }}>
+                style={{ background: '#128C7E', color: '#fff' }}>
                 Salvar refeição
               </button>
             </div>
@@ -341,7 +332,7 @@ export default function EstadiaPage() {
         ) : (
           <button onClick={() => setAdicionandoPrato(true)}
             className="w-full py-4 rounded-3xl text-sm font-semibold"
-            style={{ border: '1.5px dashed #DDDDDD', color: '#222', background: '#fff' }}>
+            style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
             + Adicionar refeição ao cardápio
           </button>
         )}

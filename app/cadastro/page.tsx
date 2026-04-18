@@ -23,50 +23,44 @@ export default function CadastroPage() {
     if (error) {
       setErro('Erro ao criar conta: ' + error.message)
     } else if (data.user) {
-      if (data.session) {
-        router.push('/dashboard')
-      } else {
-        // Supabase enviou email de confirmação — redireciona para dashboard
-        // (o app funciona com localStorage, auth é opcional no MVP)
-        router.push('/dashboard')
-      }
+      router.push('/dashboard')
     }
     setCarregando(false)
   }
 
   return (
-    <main className="min-h-screen flex flex-col px-6 py-10 max-w-sm mx-auto w-full justify-center" style={{ background: '#F7F5F2' }}>
-      <Link href="/" className="text-xl font-bold tracking-tight mb-10 block" style={{ color: '#222' }}>despensa</Link>
+    <main className="min-h-screen flex flex-col px-6 py-10 max-w-sm mx-auto w-full justify-center" style={{ background: '#F0F7F2' }}>
+      <Link href="/" className="text-xl font-bold tracking-tight mb-10 block" style={{ color: '#1A2E25' }}>despensa</Link>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Criar conta</h1>
-      <p className="text-sm mb-8" style={{ color: '#717171' }}>Cadastre sua casa ou pousada</p>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Criar conta</h1>
+      <p className="text-sm mb-8" style={{ color: '#5A7A68' }}>Cadastre sua casa ou pousada</p>
 
       <form onSubmit={handleCadastro} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: '#222' }}>Nome da casa ou pousada</label>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#1A2E25' }}>Nome da casa ou pousada</label>
           <input
             type="text" value={nomeCasa} onChange={e => setNomeCasa(e.target.value)}
             placeholder="Ex: Casa Trancoso, Villa Mar" required
             className="w-full px-4 py-3.5 rounded-2xl border text-base outline-none"
-            style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+            style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: '#222' }}>Email</label>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#1A2E25' }}>E-mail</label>
           <input
             type="email" value={email} onChange={e => setEmail(e.target.value)}
             placeholder="seu@email.com" required
             className="w-full px-4 py-3.5 rounded-2xl border text-base outline-none"
-            style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+            style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: '#222' }}>Senha</label>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#1A2E25' }}>Senha</label>
           <input
             type="password" value={senha} onChange={e => setSenha(e.target.value)}
             placeholder="Mínimo 8 caracteres" minLength={8} required
             className="w-full px-4 py-3.5 rounded-2xl border text-base outline-none"
-            style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+            style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}
           />
         </div>
 
@@ -75,15 +69,15 @@ export default function CadastroPage() {
         <button
           type="submit" disabled={carregando}
           className="w-full py-4 rounded-2xl font-semibold text-base disabled:opacity-50"
-          style={{ background: '#222', color: '#fff' }}
+          style={{ background: '#128C7E', color: '#fff' }}
         >
           {carregando ? 'Criando conta...' : 'Criar conta'}
         </button>
       </form>
 
-      <p className="text-center text-sm mt-8" style={{ color: '#717171' }}>
+      <p className="text-center text-sm mt-8" style={{ color: '#5A7A68' }}>
         Já tem conta?{' '}
-        <Link href="/login" className="font-semibold underline" style={{ color: '#222' }}>Entrar</Link>
+        <Link href="/login" className="font-semibold underline" style={{ color: '#128C7E' }}>Entrar</Link>
       </p>
     </main>
   )

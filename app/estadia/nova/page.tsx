@@ -27,22 +27,22 @@ function gerarDias(dataInicio: string, dataFim: string) {
 }
 
 function ContadorPessoas({ label, sublabel, value, onChange }: {
-  label: string, sublabel: string, value: number, onChange: (v: number) => void
+  label: string; sublabel: string; value: number; onChange: (v: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #EBEBEB' }}>
+    <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #E4F2EA' }}>
       <div>
-        <p className="font-medium text-base" style={{ color: '#222' }}>{label}</p>
-        <p className="text-sm" style={{ color: '#717171' }}>{sublabel}</p>
+        <p className="font-medium text-base" style={{ color: '#1A2E25' }}>{label}</p>
+        <p className="text-sm" style={{ color: '#5A7A68' }}>{sublabel}</p>
       </div>
       <div className="flex items-center gap-4">
         <button type="button" onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-medium active:opacity-60"
-          style={{ border: '1.5px solid #DDDDDD', color: '#222', background: '#fff' }}>−</button>
-        <span className="w-5 text-center font-semibold text-lg" style={{ color: '#222' }}>{value}</span>
+          className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium"
+          style={{ border: '1.5px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
+        <span className="w-6 text-center font-semibold text-lg" style={{ color: '#1A2E25' }}>{value}</span>
         <button type="button" onClick={() => onChange(value + 1)}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-medium active:opacity-60"
-          style={{ border: '1.5px solid #222', color: '#fff', background: '#222' }}>+</button>
+          className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium"
+          style={{ background: '#128C7E', color: '#fff' }}>+</button>
       </div>
     </div>
   )
@@ -78,58 +78,58 @@ export default function NovaEstadiaPage() {
   }
 
   return (
-    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F7F5F2' }}>
+    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
       <div className="mb-8">
-        <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</Link>
+        <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Voltar</Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Nova estadia</h1>
-      <p className="text-sm mb-8" style={{ color: '#717171' }}>Defina datas e hóspedes</p>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Nova estadia</h1>
+      <p className="text-sm mb-8" style={{ color: '#5A7A68' }}>Defina as datas e os hóspedes</p>
 
       {/* Nome */}
-      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #EBEBEB' }}>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#222' }}>Nome da estadia</label>
+      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #D4EDE0' }}>
+        <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>Nome da estadia</label>
         <input type="text" value={nome} onChange={e => setNome(e.target.value)}
           placeholder="Ex: Família Silva, Grupo de Amigos"
           className="w-full px-4 py-3 rounded-2xl border text-base outline-none"
-          style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
       </div>
 
       {/* Datas */}
-      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #EBEBEB' }}>
-        <p className="font-medium text-base mb-4" style={{ color: '#222' }}>Período da estadia</p>
+      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #D4EDE0' }}>
+        <p className="font-medium text-base mb-4" style={{ color: '#1A2E25' }}>Período da estadia</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#717171' }}>Check-in</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: '#7BA892' }}>Check-in</label>
             <input type="date" value={dataInicio}
               onChange={e => { setDataInicio(e.target.value); if (dataFim && e.target.value > dataFim) setDataFim('') }}
               className="w-full px-3 py-3 rounded-2xl border text-sm outline-none"
-              style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+              style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#717171' }}>Check-out</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: '#7BA892' }}>Check-out</label>
             <input type="date" value={dataFim} min={dataInicio}
               onChange={e => setDataFim(e.target.value)}
               className="w-full px-3 py-3 rounded-2xl border text-sm outline-none"
-              style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
+              style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
           </div>
         </div>
         {numeroDias > 0 && (
-          <p className="text-sm mt-3 font-medium" style={{ color: '#9B8B7A' }}>
+          <p className="text-sm mt-3 font-medium" style={{ color: '#7BA892' }}>
             {numeroDias} dia{numeroDias > 1 ? 's' : ''}
           </p>
         )}
       </div>
 
       {/* Hóspedes */}
-      <div className="bg-white rounded-3xl px-5 mb-6" style={{ border: '1.5px solid #EBEBEB' }}>
-        <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#222' }}>Hóspedes</p>
-        <p className="text-sm pb-2" style={{ color: '#717171' }}>Quem fica durante toda a estadia</p>
+      <div className="bg-white rounded-3xl px-5 mb-6" style={{ border: '1.5px solid #D4EDE0' }}>
+        <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#1A2E25' }}>Hóspedes</p>
+        <p className="text-sm pb-2" style={{ color: '#5A7A68' }}>Quem fica durante toda a estadia</p>
         <ContadorPessoas label="Homens" sublabel="Porção completa" value={homens} onChange={setHomens} />
         <ContadorPessoas label="Mulheres" sublabel="Porção reduzida" value={mulheres} onChange={setMulheres} />
         <ContadorPessoas label="Crianças" sublabel="Meia porção" value={criancas} onChange={setCriancas} />
         {totalPessoas > 0 && (
-          <p className="text-sm py-4 font-medium" style={{ color: '#9B8B7A' }}>
+          <p className="text-sm py-4 font-medium" style={{ color: '#7BA892' }}>
             {totalPessoas} pessoa{totalPessoas > 1 ? 's' : ''}
           </p>
         )}
@@ -137,7 +137,7 @@ export default function NovaEstadiaPage() {
 
       <button onClick={criar} disabled={!podeCriar}
         className="w-full py-4 rounded-2xl font-semibold text-base disabled:opacity-40"
-        style={{ background: '#222', color: '#fff' }}>
+        style={{ background: '#128C7E', color: '#fff' }}>
         Criar estadia e planejar
       </button>
     </main>

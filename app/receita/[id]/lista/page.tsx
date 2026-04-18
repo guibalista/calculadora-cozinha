@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { totalEquivalente } from '@/lib/percapita'
 import { formatarPeso } from '@/lib/lista-compras'
-import { agruparPorSetor, gerarTextoWhatsApp, gerarHTMLImpressao, type ItemLista } from '@/lib/setores'
+import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
+import { baixarPDF } from '@/lib/exportar-pdf'
 
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
 interface Refeicao { id: string; nome: string; ingredientes: IngPrato[] }
@@ -39,6 +40,7 @@ export default function ListaReceitaPage() {
   const { id } = useParams<{ id: string }>()
   const [evento, setEvento] = useState<Evento | null>(null)
   const [cenario, setCenario] = useState<Cenario>('conservador')
+  const [gerando, setGerando] = useState(false)
 
   useEffect(() => {
     const eventos = JSON.parse(localStorage.getItem('eventos') || '[]')
@@ -46,8 +48,8 @@ export default function ListaReceitaPage() {
   }, [id])
 
   if (!evento) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F7F5F2' }}>
-      <p style={{ color: '#717171' }}>Carregando...</p>
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
+      <p style={{ color: '#5A7A68' }}>Carregando...</p>
     </div>
   )
 
@@ -84,18 +86,16 @@ export default function ListaReceitaPage() {
 
   const nomeCenario = cenario === 'moderado' ? 'Moderado (−15%)' : cenario === 'conservador' ? 'Conservador (padrão)' : 'Agressivo (+25%)'
 
-  function exportarPDF() {
-    const html = gerarHTMLImpressao({
+  async function exportarPDF() {
+    setGerando(true)
+    await baixarPDF({
       nomeEvento: evento!.nome,
       data: dataFormatada,
       totalPessoas: `${evento!.totalPessoas} pessoas (${descPessoas})`,
       cenario: nomeCenario,
       grupos,
     })
-    const janela = window.open('', '_blank')
-    if (!janela) return
-    janela.document.write(html)
-    janela.document.close()
+    setGerando(false)
   }
 
   function enviarWhatsApp() {
@@ -116,9 +116,9 @@ export default function ListaReceitaPage() {
   ]
 
   return (
-    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F7F5F2' }}>
+    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F0F7F2' }}>
       <div className="flex items-center justify-between mb-6">
-        <Link href={`/receita/${id}`} className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</Link>
+        <Link href={`/receita/${id}`} className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Voltar</Link>
         {totalItens > 0 && (
           <div className="flex gap-2">
             <button onClick={enviarWhatsApp}
@@ -126,108 +126,113 @@ export default function ListaReceitaPage() {
               style={{ background: '#25D366', color: '#fff' }}>
               WhatsApp
             </button>
-            <button onClick={exportarPDF}
-              className="px-3 py-2 rounded-2xl text-sm font-semibold"
-              style={{ background: '#222', color: '#fff' }}>
-              Salvar PDF
+            <button onClick={exportarPDF} disabled={gerando}
+              className="px-3 py-2 rounded-2xl text-sm font-semibold disabled:opacity-60"
+              style={{ background: '#128C7E', color: '#fff' }}>
+              {gerando ? 'Gerando...' : 'Baixar PDF'}
             </button>
           </div>
         )}
       </div>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Lista de compras</h1>
-      <p className="text-sm mb-6" style={{ color: '#717171' }}>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Lista de compras</h1>
+      <p className="text-sm mb-6" style={{ color: '#5A7A68' }}>
         {evento.nome} · {evento.totalPessoas} pessoas · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
       </p>
 
-      {/* Cenário */}
-      <div className="bg-white rounded-3xl p-4 mb-6" style={{ border: '1.5px solid #EBEBEB' }}>
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Perfil de compra</p>
+      {/* Perfil de compra */}
+      <div className="bg-white rounded-3xl p-4 mb-6" style={{ border: '1.5px solid #D4EDE0' }}>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Perfil de compra</p>
         <div className="grid grid-cols-3 gap-2">
           {cenarios.map(c => (
             <button key={c.key} onClick={() => setCenario(c.key)}
               className="py-3 rounded-2xl text-center"
               style={cenario === c.key
-                ? { background: '#222', color: '#fff' }
-                : { background: '#F7F5F2', color: '#717171', border: '1.5px solid #EBEBEB' }}>
+                ? { background: '#128C7E', color: '#fff' }
+                : { background: '#F0F7F2', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
               <p className="text-sm font-semibold">{c.label}</p>
-              <p className="text-xs mt-0.5" style={{ color: cenario === c.key ? 'rgba(255,255,255,0.6)' : '#9B8B7A' }}>{c.desc}</p>
+              <p className="text-xs mt-0.5" style={{ color: cenario === c.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{c.desc}</p>
             </button>
           ))}
         </div>
+        <p className="text-xs mt-3 text-center" style={{ color: '#7BA892' }}>
+          {cenario === 'moderado' && 'Apetite leve — ligeiramente abaixo do padrão'}
+          {cenario === 'conservador' && 'Quantidade padrão — calculada por pessoa'}
+          {cenario === 'agressivo' && 'Garantido sobrar — ideal para grupos com muito apetite'}
+        </p>
       </div>
 
       {totalItens === 0 ? (
         <div className="text-center py-16">
-          <p className="text-lg mb-2" style={{ color: '#222' }}>Nenhuma refeição adicionada</p>
+          <p className="text-lg mb-2" style={{ color: '#1A2E25' }}>Nenhuma refeição adicionada</p>
           <Link href={`/receita/${id}`} className="px-6 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: '#222', color: '#fff' }}>
+            style={{ background: '#128C7E', color: '#fff' }}>
             Montar cardápio
           </Link>
         </div>
       ) : (
         <div className="space-y-4">
           {grupos.map(grupo => (
-            <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #EBEBEB' }}>
-              <div className="px-5 py-4" style={{ borderBottom: '1px solid #EBEBEB' }}>
-                <p className="font-semibold text-sm" style={{ color: '#9B8B7A' }}>{grupo.setor}</p>
+            <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+              <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>{grupo.setor}</p>
               </div>
               {grupo.itens.map((item, i) => (
                 <div key={i} className="px-5 py-4 flex items-center justify-between"
-                  style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #F0EEEB' : 'none' }}>
+                  style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
                   <div>
-                    <p className="text-base" style={{ color: '#222' }}>{item.nome}</p>
-                    {item.unidade && <p className="text-xs mt-0.5" style={{ color: '#9B8B7A' }}>{item.unidade}</p>}
+                    <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
+                    {item.unidade && <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{item.unidade}</p>}
                   </div>
                   <div className="text-right ml-4">
-                    <p className="font-semibold text-base" style={{ color: '#222' }}>{formatarPeso(item.brutoKg)}</p>
-                    <p className="text-xs" style={{ color: '#717171' }}>{formatarPeso(item.liquidoKg)} líq.</p>
+                    <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>{formatarPeso(item.brutoKg)}</p>
+                    <p className="text-xs" style={{ color: '#5A7A68' }}>{formatarPeso(item.liquidoKg)} líq.</p>
                   </div>
                 </div>
               ))}
             </div>
           ))}
 
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Resumo</p>
+          {/* Resumo */}
+          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Resumo</p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#717171' }}>Evento</span>
-                <span style={{ color: '#222' }}>{evento.nome}</span>
+                <span style={{ color: '#5A7A68' }}>Evento</span>
+                <span style={{ color: '#1A2E25' }}>{evento.nome}</span>
               </div>
               {dataFormatada && (
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#717171' }}>Data</span>
-                  <span style={{ color: '#222' }}>{dataFormatada}</span>
+                  <span style={{ color: '#5A7A68' }}>Data</span>
+                  <span style={{ color: '#1A2E25' }}>{dataFormatada}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#717171' }}>Pessoas</span>
-                <span style={{ color: '#222' }}>{descPessoas}</span>
+                <span style={{ color: '#5A7A68' }}>Pessoas</span>
+                <span style={{ color: '#1A2E25' }}>{descPessoas}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#717171' }}>Cenário</span>
-                <span className="font-medium" style={{ color: '#222' }}>{nomeCenario}</span>
+                <span style={{ color: '#5A7A68' }}>Cenário</span>
+                <span className="font-medium" style={{ color: '#128C7E' }}>{nomeCenario}</span>
               </div>
             </div>
           </div>
 
-          {/* Botões export duplicados no rodapé */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          {/* Botões rodapé */}
+          <div className="grid grid-cols-2 gap-3 pt-2 pb-4">
             <button onClick={enviarWhatsApp}
               className="py-4 rounded-2xl font-semibold text-sm"
               style={{ background: '#25D366', color: '#fff' }}>
               Enviar WhatsApp
             </button>
-            <button onClick={exportarPDF}
-              className="py-4 rounded-2xl font-semibold text-sm"
-              style={{ background: '#222', color: '#fff' }}>
-              Salvar PDF
+            <button onClick={exportarPDF} disabled={gerando}
+              className="py-4 rounded-2xl font-semibold text-sm disabled:opacity-60"
+              style={{ background: '#128C7E', color: '#fff' }}>
+              {gerando ? 'Gerando...' : 'Baixar PDF'}
             </button>
           </div>
         </div>
       )}
-      <div className="h-8" />
     </main>
   )
 }
