@@ -1,11 +1,103 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { tabelaAlimentos } from '@/lib/fatores-correcao'
+import { buscarIngrediente, type Ingrediente } from '@/lib/ingredientes-db'
 import { calcularReceita, formatarPeso, formatarMoeda, type IngredienteReceita, type ResultadoCenario } from '@/lib/calculadora'
 import type { CenarioNome } from '@/lib/fatores-correcao'
 
 type Etapa = 'configurar' | 'ingredientes' | 'resultado'
+
+function BuscaIngrediente({ onAdicionar }: { onAdicionar: (ing: IngredienteReceita) => void }) {
+  const [termo, setTermo] = useState('')
+  const [sugestoes, setSugestoes] = useState<Ingrediente[]>([])
+  const [selecionado, setSelecionado] = useState<Ingrediente | null>(null)
+  const [preco, setPreco] = useState('')
+  const [qtd, setQtd] = useState('')
+
+  function buscar(v: string) {
+    setTermo(v)
+    setSelecionado(null)
+    setSugestoes(v.length >= 2 ? buscarIngrediente(v) : [])
+  }
+
+  function selecionar(ing: Ingrediente) {
+    setSelecionado(ing)
+    setTermo(ing.nome)
+    setQtd(String((ing.percapitaGramas / 1000).toFixed(3)))
+    setSugestoes([])
+  }
+
+  function confirmar() {
+    if (!selecionado || !preco || !qtd) return
+    onAdicionar({
+      id: Date.now().toString(),
+      nome: selecionado.nome,
+      quantidadeLiquidaKg: parseFloat(qtd),
+      precoUnitario: parseFloat(preco),
+      fatorCorrecao: selecionado.fatorCorrecao,
+      fatorCoccao: selecionado.fatorCoccao,
+      categoria: selecionado.categoria,
+    })
+    setTermo(''); setSelecionado(null); setPreco(''); setQtd('')
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <input
+          type="text" value={termo} onChange={e => buscar(e.target.value)}
+          placeholder="Buscar ingrediente..."
+          className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
+          style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }}
+        />
+        {sugestoes.length > 0 && (
+          <div className="absolute z-10 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
+            style={{ background: '#fff', border: '1.5px solid #EBEBEB' }}>
+            {sugestoes.map(s => (
+              <button key={s.nome} onClick={() => selecionar(s)}
+                className="w-full text-left px-4 py-3 text-sm flex items-center justify-between active:opacity-60"
+                style={{ borderBottom: '1px solid #F0EEEB', color: '#222' }}>
+                <span>{s.nome}</span>
+                <span className="text-xs" style={{ color: '#9B8B7A' }}>{s.percapitaGramas}g/pessoa</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selecionado && (
+        <div className="rounded-2xl p-4 space-y-3" style={{ background: '#F0EEEB' }}>
+          <p className="text-sm font-semibold" style={{ color: '#222' }}>{selecionado.nome}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#717171' }}>Qtd. na receita (kg)</label>
+              <input
+                type="number" value={qtd} onChange={e => setQtd(e.target.value)}
+                step="0.05" min="0" placeholder="0.000"
+                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none text-center font-semibold"
+                style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#717171' }}>Preço por kg (R$)</label>
+              <input
+                type="number" value={preco} onChange={e => setPreco(e.target.value)}
+                step="0.01" min="0" placeholder="0.00"
+                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none text-center font-semibold"
+                style={{ border: '1.5px solid #DDDDDD', background: '#fff', color: '#222' }}
+              />
+            </div>
+          </div>
+          <button onClick={confirmar} disabled={!preco || !qtd}
+            className="w-full py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
+            style={{ background: '#222', color: '#fff' }}>
+            Adicionar
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function CalculadoraPage() {
   const [etapa, setEtapa] = useState<Etapa>('configurar')
@@ -16,39 +108,6 @@ export default function CalculadoraPage() {
   const [ingredientes, setIngredientes] = useState<IngredienteReceita[]>([])
   const [resultado, setResultado] = useState<Record<CenarioNome, ResultadoCenario> | null>(null)
   const [cenarioAtivo, setCenarioAtivo] = useState<CenarioNome>('moderado')
-
-  const [novoNome, setNovoNome] = useState('')
-  const [novaQtd, setNovaQtd] = useState('')
-  const [novoPreco, setNovoPreco] = useState('')
-  const [novoFc, setNovoFc] = useState('1.00')
-  const [novoFcoccao, setNovoFcoccao] = useState('0.80')
-
-  function buscarFatores(nome: string) {
-    const base = tabelaAlimentos.find(a => a.nome.toLowerCase().includes(nome.toLowerCase()))
-    if (base) {
-      setNovoFc(base.fatorCorrecao.toFixed(2))
-      setNovoFcoccao(base.fatorCoccao.toFixed(2))
-    }
-  }
-
-  function adicionarIngrediente() {
-    if (!novoNome || !novaQtd || !novoPreco) return
-    const novo: IngredienteReceita = {
-      id: Date.now().toString(),
-      nome: novoNome,
-      quantidadeLiquidaKg: parseFloat(novaQtd),
-      precoUnitario: parseFloat(novoPreco),
-      fatorCorrecao: parseFloat(novoFc),
-      fatorCoccao: parseFloat(novoFcoccao),
-      categoria: tabelaAlimentos.find(a => a.nome.toLowerCase().includes(novoNome.toLowerCase()))?.categoria ?? 'proteina',
-    }
-    setIngredientes(prev => [...prev, novo])
-    setNovoNome('')
-    setNovaQtd('')
-    setNovoPreco('')
-    setNovoFc('1.00')
-    setNovoFcoccao('0.80')
-  }
 
   function removerIngrediente(id: string) {
     setIngredientes(prev => prev.filter(i => i.id !== id))
@@ -64,97 +123,93 @@ export default function CalculadoraPage() {
     setEtapa('resultado')
   }
 
+  // ─── RESULTADO ────────────────────────────────────────────
   if (etapa === 'resultado' && resultado) {
     const cenario = resultado[cenarioAtivo]
-    const cores: Record<CenarioNome, string> = {
-      conservador: 'bg-blue-50 border-blue-200 text-blue-800',
-      moderado: 'bg-green-50 border-green-200 text-green-800',
-      agressivo: 'bg-orange-50 border-orange-200 text-orange-800',
-    }
-    const botoesAtivos: Record<CenarioNome, string> = {
-      conservador: 'bg-blue-600 text-white',
-      moderado: 'bg-green-600 text-white',
-      agressivo: 'bg-orange-500 text-white',
-    }
+    const cenarios: { key: CenarioNome; label: string }[] = [
+      { key: 'conservador', label: 'Conservador' },
+      { key: 'moderado', label: 'Moderado' },
+      { key: 'agressivo', label: 'Agressivo' },
+    ]
 
     return (
-      <main className="min-h-screen px-4 py-6 max-w-lg mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => setEtapa('ingredientes')} className="text-[#c8783a] text-sm font-medium">← Voltar</button>
-          <h1 className="text-xl font-bold text-[#1a1a1a] flex-1">{nomeReceita || 'Resultado'}</h1>
+      <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F7F5F2' }}>
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={() => setEtapa('ingredientes')} className="text-sm font-medium underline" style={{ color: '#222' }}>← Ingredientes</button>
+          <span className="text-sm" style={{ color: '#717171' }}>{numeroPessoas} pessoas</span>
         </div>
 
-        <p className="text-sm text-[#8a7f74] mb-4">Para <strong>{numeroPessoas} pessoas</strong> — escolha o cenário:</p>
+        <h1 className="text-xl font-bold mb-1" style={{ color: '#222' }}>{nomeReceita || 'Resultado'}</h1>
+        <p className="text-sm mb-5" style={{ color: '#717171' }}>Escolha o cenário de consumo</p>
 
-        <div className="flex gap-2 mb-6">
-          {(['conservador', 'moderado', 'agressivo'] as CenarioNome[]).map(c => (
-            <button
-              key={c}
-              onClick={() => setCenarioAtivo(c)}
-              className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold capitalize transition-all border ${cenarioAtivo === c ? botoesAtivos[c] : 'bg-white border-[#e5e0d8] text-[#8a7f74]'}`}
-            >
-              {resultado[c].label}
+        {/* Seletor de cenário */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          {cenarios.map(c => (
+            <button key={c.key} onClick={() => setCenarioAtivo(c.key)}
+              className="py-3 rounded-2xl text-sm font-semibold transition-all"
+              style={cenarioAtivo === c.key
+                ? { background: '#222', color: '#fff' }
+                : { background: '#fff', color: '#717171', border: '1.5px solid #EBEBEB' }}>
+              {c.label}
             </button>
           ))}
         </div>
 
-        <div className={`rounded-3xl p-5 border mb-6 ${cores[cenarioAtivo]}`}>
-          <div className="grid grid-cols-3 gap-3 text-center">
+        {/* Resumo do cenário */}
+        <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #EBEBEB' }}>
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-xs opacity-70 mb-1">Custo total</p>
-              <p className="font-bold text-lg">{formatarMoeda(cenario.custoTotalReceita)}</p>
+              <p className="text-xs mb-1" style={{ color: '#717171' }}>Custo total</p>
+              <p className="font-bold text-base" style={{ color: '#222' }}>{formatarMoeda(cenario.custoTotalReceita)}</p>
             </div>
             <div>
-              <p className="text-xs opacity-70 mb-1">Custo/pessoa</p>
-              <p className="font-bold text-lg">{formatarMoeda(cenario.custoPorPessoa)}</p>
+              <p className="text-xs mb-1" style={{ color: '#717171' }}>Por pessoa</p>
+              <p className="font-bold text-base" style={{ color: '#222' }}>{formatarMoeda(cenario.custoPorPessoa)}</p>
             </div>
             <div>
-              <p className="text-xs opacity-70 mb-1">Preço sugerido</p>
-              <p className="font-bold text-lg">{formatarMoeda(cenario.precoVendaSugerido)}</p>
+              <p className="text-xs mb-1" style={{ color: '#717171' }}>Preço sugerido</p>
+              <p className="font-bold text-base" style={{ color: '#9B8B7A' }}>{formatarMoeda(cenario.precoVendaSugerido)}</p>
             </div>
           </div>
         </div>
 
-        <h2 className="font-bold text-[#1a1a1a] mb-3">Ingredientes ({cenario.ingredientes.length})</h2>
-
-        <div className="space-y-3 mb-6">
+        {/* Ingredientes */}
+        <p className="font-semibold text-sm mb-3" style={{ color: '#222' }}>Ingredientes calculados</p>
+        <div className="space-y-3 mb-5">
           {cenario.ingredientes.map((ing, i) => (
-            <div key={i} className="bg-white rounded-2xl p-4 border border-[#e5e0d8] shadow-sm">
-              <div className="flex justify-between items-start mb-3">
-                <p className="font-semibold text-[#1a1a1a] text-sm">{ing.nome}</p>
-                <p className="font-bold text-[#c8783a] text-sm">{formatarMoeda(ing.custoTotal)}</p>
+            <div key={i} className="bg-white rounded-3xl p-4" style={{ border: '1.5px solid #EBEBEB' }}>
+              <div className="flex justify-between items-center mb-3">
+                <p className="font-semibold text-sm" style={{ color: '#222' }}>{ing.nome}</p>
+                <p className="font-semibold text-sm" style={{ color: '#9B8B7A' }}>{formatarMoeda(ing.custoTotal)}</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-[#f9f7f4] rounded-xl p-2">
-                  <p className="text-xs text-[#8a7f74] mb-1">Peso bruto</p>
-                  <p className="font-bold text-xs text-[#1a1a1a]">{formatarPeso(ing.pesoBrutoTotal)}</p>
-                  <p className="text-xs text-[#8a7f74]">{formatarPeso(ing.pesoBrutoPorPessoa)}/pessoa</p>
+                <div className="py-2 rounded-xl" style={{ background: '#F7F5F2' }}>
+                  <p className="text-xs mb-0.5" style={{ color: '#717171' }}>Comprar</p>
+                  <p className="font-bold text-xs" style={{ color: '#222' }}>{formatarPeso(ing.pesoBrutoTotal)}</p>
                 </div>
-                <div className="bg-[#f9f7f4] rounded-xl p-2">
-                  <p className="text-xs text-[#8a7f74] mb-1">Peso líquido</p>
-                  <p className="font-bold text-xs text-[#1a1a1a]">{formatarPeso(ing.pesoLiquidoTotal)}</p>
-                  <p className="text-xs text-[#8a7f74]">{formatarPeso(ing.pesoLiquidoPorPessoa)}/pessoa</p>
+                <div className="py-2 rounded-xl" style={{ background: '#F7F5F2' }}>
+                  <p className="text-xs mb-0.5" style={{ color: '#717171' }}>Líquido</p>
+                  <p className="font-bold text-xs" style={{ color: '#222' }}>{formatarPeso(ing.pesoLiquidoTotal)}</p>
                 </div>
-                <div className="bg-[#f9f7f4] rounded-xl p-2">
-                  <p className="text-xs text-[#8a7f74] mb-1">Pós-cocção</p>
-                  <p className="font-bold text-xs text-[#1a1a1a]">{formatarPeso(ing.pesoPoscoccaoTotal)}</p>
-                  <p className="text-xs text-[#8a7f74]">{formatarPeso(ing.pesoPoscoccaoPorPessoa)}/pessoa</p>
+                <div className="py-2 rounded-xl" style={{ background: '#F7F5F2' }}>
+                  <p className="text-xs mb-0.5" style={{ color: '#717171' }}>Cozido</p>
+                  <p className="font-bold text-xs" style={{ color: '#222' }}>{formatarPeso(ing.pesoPoscoccaoTotal)}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="bg-[#fff8f0] rounded-3xl p-5 border border-[#f0d4b8]">
-          <h3 className="font-bold text-[#c8783a] mb-3">📊 Comparativo de cenários</h3>
+        {/* Comparativo */}
+        <div className="bg-white rounded-3xl p-5 mb-6" style={{ border: '1.5px solid #EBEBEB' }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Comparativo</p>
           <div className="space-y-2">
-            {(['conservador', 'moderado', 'agressivo'] as CenarioNome[]).map(c => (
-              <div key={c} className="flex justify-between items-center text-sm">
-                <span className="text-[#8a7f74] capitalize">{resultado[c].label}</span>
-                <div className="flex gap-4">
-                  <span className="text-[#1a1a1a] font-medium">Custo: {formatarMoeda(resultado[c].custoTotalReceita)}</span>
-                  <span className="text-[#c8783a] font-bold">Venda: {formatarMoeda(resultado[c].precoVendaSugerido * numeroPessoas)}</span>
-                </div>
+            {cenarios.map(c => (
+              <div key={c.key} className="flex justify-between text-sm">
+                <span style={{ color: '#717171' }}>{c.label} ({resultado[c.key].label})</span>
+                <span className="font-semibold" style={{ color: '#222' }}>
+                  custo {formatarMoeda(resultado[c.key].custoTotalReceita)} · venda {formatarMoeda(resultado[c.key].precoVendaSugerido * numeroPessoas)}
+                </span>
               </div>
             ))}
           </div>
@@ -162,218 +217,135 @@ export default function CalculadoraPage() {
 
         <button
           onClick={() => { setEtapa('configurar'); setResultado(null); setIngredientes([]) }}
-          className="w-full mt-6 border-2 border-[#c8783a] text-[#c8783a] font-semibold py-4 rounded-2xl"
-        >
+          className="w-full py-4 rounded-2xl font-semibold text-sm"
+          style={{ border: '1.5px solid #DDDDDD', color: '#222', background: '#fff' }}>
           Nova calculadora
         </button>
+        <div className="h-8" />
       </main>
     )
   }
 
+  // ─── INGREDIENTES ─────────────────────────────────────────
   if (etapa === 'ingredientes') {
     return (
-      <main className="min-h-screen px-4 py-6 max-w-lg mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => setEtapa('configurar')} className="text-[#c8783a] text-sm font-medium">← Voltar</button>
-          <h1 className="text-xl font-bold text-[#1a1a1a] flex-1">Ingredientes</h1>
-          <span className="text-sm text-[#8a7f74]">{numeroPessoas}p</span>
+      <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F7F5F2' }}>
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={() => setEtapa('configurar')} className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</button>
+          <span className="text-sm" style={{ color: '#717171' }}>{nomeReceita} · {numeroPessoas}p</span>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-[#e5e0d8] shadow-sm mb-4">
-          <h2 className="font-bold text-[#1a1a1a] mb-4 text-sm">Adicionar ingrediente</h2>
+        <h1 className="text-xl font-bold mb-1" style={{ color: '#222' }}>Ingredientes</h1>
+        <p className="text-sm mb-6" style={{ color: '#717171' }}>Adicione os ingredientes da receita</p>
 
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-[#8a7f74] mb-1">Nome do ingrediente</label>
-              <input
-                type="text"
-                value={novoNome}
-                onChange={e => { setNovoNome(e.target.value); buscarFatores(e.target.value) }}
-                placeholder="Ex: Frango peito sem osso"
-                list="lista-alimentos"
-                className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-              />
-              <datalist id="lista-alimentos">
-                {tabelaAlimentos.map(a => <option key={a.nome} value={a.nome} />)}
-              </datalist>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-[#8a7f74] mb-1">Qtd. líquida da receita (kg)</label>
-                <input
-                  type="number"
-                  value={novaQtd}
-                  onChange={e => setNovaQtd(e.target.value)}
-                  placeholder="Ex: 1.5"
-                  step="0.1"
-                  min="0"
-                  className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#8a7f74] mb-1">Preço por kg (R$)</label>
-                <input
-                  type="number"
-                  value={novoPreco}
-                  onChange={e => setNovoPreco(e.target.value)}
-                  placeholder="Ex: 28.90"
-                  step="0.01"
-                  min="0"
-                  className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-[#8a7f74] mb-1">Fator de correção (FC)</label>
-                <input
-                  type="number"
-                  value={novoFc}
-                  onChange={e => setNovoFc(e.target.value)}
-                  step="0.01"
-                  min="1"
-                  className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-                />
-                <p className="text-xs text-[#8a7f74] mt-1">Preenchido automático</p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#8a7f74] mb-1">Fator de cocção</label>
-                <input
-                  type="number"
-                  value={novoFcoccao}
-                  onChange={e => setNovoFcoccao(e.target.value)}
-                  step="0.01"
-                  min="0.1"
-                  className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-                />
-                <p className="text-xs text-[#8a7f74] mt-1">Pós-cozimento</p>
-              </div>
-            </div>
-
-            <button
-              onClick={adicionarIngrediente}
-              disabled={!novoNome || !novaQtd || !novoPreco}
-              className="w-full bg-[#c8783a] text-white font-semibold py-3 rounded-2xl text-sm disabled:opacity-40"
-            >
-              + Adicionar ingrediente
-            </button>
-          </div>
+        <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #222' }}>
+          <p className="font-semibold text-sm mb-4" style={{ color: '#222' }}>Adicionar ingrediente</p>
+          <BuscaIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
         </div>
 
         {ingredientes.length > 0 && (
           <div className="space-y-2 mb-6">
-            <h2 className="font-bold text-[#1a1a1a] text-sm">Ingredientes adicionados ({ingredientes.length})</h2>
+            <p className="font-semibold text-sm" style={{ color: '#222' }}>Adicionados ({ingredientes.length})</p>
             {ingredientes.map(ing => (
-              <div key={ing.id} className="bg-white rounded-2xl px-4 py-3 border border-[#e5e0d8] flex justify-between items-center">
+              <div key={ing.id} className="bg-white rounded-2xl px-4 py-3 flex items-center justify-between"
+                style={{ border: '1.5px solid #EBEBEB' }}>
                 <div>
-                  <p className="font-semibold text-sm text-[#1a1a1a]">{ing.nome}</p>
-                  <p className="text-xs text-[#8a7f74]">{ing.quantidadeLiquidaKg}kg líq. · FC {ing.fatorCorrecao} · R${ing.precoUnitario}/kg</p>
+                  <p className="font-semibold text-sm" style={{ color: '#222' }}>{ing.nome}</p>
+                  <p className="text-xs" style={{ color: '#717171' }}>
+                    {(ing.quantidadeLiquidaKg * 1000).toFixed(0)}g · R${ing.precoUnitario.toFixed(2)}/kg
+                  </p>
                 </div>
-                <button onClick={() => removerIngrediente(ing.id)} className="text-red-400 text-lg px-2">×</button>
+                <button onClick={() => removerIngrediente(ing.id)} className="text-lg px-1" style={{ color: '#BBBBBB' }}>×</button>
               </div>
             ))}
           </div>
         )}
 
-        <button
-          onClick={calcular}
-          disabled={ingredientes.length === 0}
-          className="w-full bg-[#c8783a] text-white font-bold py-4 rounded-2xl text-base disabled:opacity-40"
-        >
-          Calcular os 3 cenários →
+        <button onClick={calcular} disabled={ingredientes.length === 0}
+          className="w-full py-4 rounded-2xl font-semibold text-base disabled:opacity-40"
+          style={{ background: '#222', color: '#fff' }}>
+          Calcular →
         </button>
+        <div className="h-8" />
       </main>
     )
   }
 
+  // ─── CONFIGURAR ───────────────────────────────────────────
   return (
-    <main className="min-h-screen px-4 py-6 max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard" className="text-[#c8783a] text-sm font-medium">← Voltar</Link>
-        <h1 className="text-xl font-bold text-[#1a1a1a]">Nova calculadora</h1>
+    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F7F5F2' }}>
+      <div className="mb-6">
+        <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</Link>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1">Nome da receita</label>
-          <input
-            type="text"
-            value={nomeReceita}
-            onChange={e => setNomeReceita(e.target.value)}
-            placeholder="Ex: Frango grelhado com legumes"
-            className="w-full border border-[#e5e0d8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#c8783a] bg-[#f9f7f4]"
-          />
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Calculadora de receita</h1>
+      <p className="text-sm mb-8" style={{ color: '#717171' }}>Custo, markup e preço de venda por pessoa</p>
+
+      <div className="space-y-4">
+        {/* Nome */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#222' }}>Nome da receita</label>
+          <input type="text" value={nomeReceita} onChange={e => setNomeReceita(e.target.value)}
+            placeholder="Ex: Moqueca de camarão, Frango assado"
+            className="w-full px-4 py-3 rounded-2xl text-base outline-none"
+            style={{ border: '1.5px solid #DDDDDD', background: '#F7F5F2', color: '#222' }} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1">
-            Número de pessoas: <span className="text-[#c8783a] font-bold">{numeroPessoas}</span>
-          </label>
-          <input
-            type="range"
-            min="1"
-            max="100"
-            value={numeroPessoas}
+        {/* Pessoas */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-medium text-sm" style={{ color: '#222' }}>Número de pessoas</p>
+            <span className="font-bold text-lg" style={{ color: '#222' }}>{numeroPessoas}</span>
+          </div>
+          <input type="range" min="1" max="200" value={numeroPessoas}
             onChange={e => setNumeroPessoas(parseInt(e.target.value))}
-            className="w-full accent-[#c8783a]"
-          />
-          <div className="flex justify-between text-xs text-[#8a7f74] mt-1">
-            <span>1</span><span>50</span><span>100</span>
+            className="w-full" style={{ accentColor: '#222' }} />
+          <div className="flex justify-between text-xs mt-1" style={{ color: '#BBBBBB' }}>
+            <span>1</span><span>100</span><span>200</span>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1">
-            Porções da receita original: <span className="text-[#c8783a] font-bold">{porcoes}</span>
-          </label>
-          <input
-            type="range"
-            min="1"
-            max="50"
-            value={porcoes}
+        {/* Porções da receita */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
+          <div className="flex items-center justify-between mb-1">
+            <p className="font-medium text-sm" style={{ color: '#222' }}>Porções da receita original</p>
+            <span className="font-bold text-lg" style={{ color: '#222' }}>{porcoes}</span>
+          </div>
+          <p className="text-xs mb-4" style={{ color: '#717171' }}>Para quantas pessoas a receita foi escrita?</p>
+          <input type="range" min="1" max="50" value={porcoes}
             onChange={e => setPorcoes(parseInt(e.target.value))}
-            className="w-full accent-[#c8783a]"
-          />
-          <p className="text-xs text-[#8a7f74] mt-1">Para quantas pessoas a receita foi escrita?</p>
+            className="w-full" style={{ accentColor: '#222' }} />
+          <div className="flex justify-between text-xs mt-1" style={{ color: '#BBBBBB' }}>
+            <span>1</span><span>25</span><span>50</span>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-2">Markup (multiplicador do custo)</label>
+        {/* Markup */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #EBEBEB' }}>
+          <p className="font-medium text-sm mb-3" style={{ color: '#222' }}>Markup</p>
           <div className="grid grid-cols-4 gap-2">
             {[2, 2.5, 3, 3.5].map(m => (
-              <button
-                key={m}
-                onClick={() => setMarkup(m)}
-                className={`py-3 rounded-xl text-sm font-bold border transition-colors ${markup === m ? 'bg-[#c8783a] text-white border-[#c8783a]' : 'bg-[#f9f7f4] text-[#8a7f74] border-[#e5e0d8]'}`}
-              >
-                {m}x
+              <button key={m} onClick={() => setMarkup(m)}
+                className="py-3 rounded-2xl text-sm font-bold transition-all"
+                style={markup === m
+                  ? { background: '#222', color: '#fff' }
+                  : { background: '#F7F5F2', color: '#717171', border: '1.5px solid #EBEBEB' }}>
+                {m}×
               </button>
             ))}
           </div>
-          <p className="text-xs text-[#8a7f74] mt-2">
-            Food cost: {Math.round(100 / markup)}% · Recomendado: 3x ({Math.round(100/3)}% food cost)
+          <p className="text-xs mt-3" style={{ color: '#9B8B7A' }}>
+            Food cost: {Math.round(100 / markup)}% · Recomendado: 3× ({Math.round(100 / 3)}% food cost)
           </p>
         </div>
       </div>
 
-      <div className="mt-4 bg-[#fff8f0] rounded-3xl p-5 border border-[#f0d4b8]">
-        <h3 className="font-bold text-[#c8783a] mb-2 text-sm">📌 O que são os 3 cenários?</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex gap-2"><span className="w-20 font-medium text-blue-600">Conservador</span><span className="text-[#8a7f74]">85% — cardápio variado, apetite leve</span></div>
-          <div className="flex gap-2"><span className="w-20 font-medium text-green-600">Moderado</span><span className="text-[#8a7f74]">100% — refeição padrão</span></div>
-          <div className="flex gap-2"><span className="w-20 font-medium text-orange-500">Agressivo</span><span className="text-[#8a7f74]">125% — evento especial, muita fome</span></div>
-        </div>
-      </div>
-
-      <button
-        onClick={() => setEtapa('ingredientes')}
-        disabled={!nomeReceita}
-        className="w-full mt-6 bg-[#c8783a] text-white font-bold py-4 rounded-2xl text-base disabled:opacity-40"
-      >
+      <button onClick={() => setEtapa('ingredientes')} disabled={!nomeReceita}
+        className="w-full mt-6 py-4 rounded-2xl font-semibold text-base disabled:opacity-40"
+        style={{ background: '#222', color: '#fff' }}>
         Próximo: Ingredientes →
       </button>
+      <div className="h-8" />
     </main>
   )
 }

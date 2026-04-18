@@ -20,8 +20,17 @@ export default function CadastroPage() {
       email, password: senha,
       options: { data: { nome_casa: nomeCasa } }
     })
-    if (error) setErro('Erro ao criar conta: ' + error.message)
-    else if (data.user) router.push('/dashboard')
+    if (error) {
+      setErro('Erro ao criar conta: ' + error.message)
+    } else if (data.user) {
+      if (data.session) {
+        router.push('/dashboard')
+      } else {
+        // Supabase enviou email de confirmação — redireciona para dashboard
+        // (o app funciona com localStorage, auth é opcional no MVP)
+        router.push('/dashboard')
+      }
+    }
     setCarregando(false)
   }
 

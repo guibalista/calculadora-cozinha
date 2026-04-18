@@ -158,22 +158,109 @@ export const DB: Ingrediente[] = [
   { nome: 'Café', categoria: 'bebida', percapitaGramas: 10, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['cafe', 'café'] },
 ]
 
+// ─── CLASSIFICAÇÃO AUTOMÁTICA ────────────────────────────────
+
+const DEFAULTS_POR_CATEGORIA: Record<Categoria, { percapitaGramas: number; fatorCorrecao: number; fatorCoccao: number }> = {
+  proteina:    { percapitaGramas: 220, fatorCorrecao: 1.25, fatorCoccao: 0.80 },
+  carboidrato: { percapitaGramas: 80,  fatorCorrecao: 1.00, fatorCoccao: 2.20 },
+  vegetal:     { percapitaGramas: 80,  fatorCorrecao: 1.15, fatorCoccao: 0.87 },
+  fruta:       { percapitaGramas: 120, fatorCorrecao: 1.30, fatorCoccao: 1.00 },
+  laticinios:  { percapitaGramas: 60,  fatorCorrecao: 1.00, fatorCoccao: 1.00 },
+  tempero:     { percapitaGramas: 10,  fatorCorrecao: 1.00, fatorCoccao: 1.00 },
+  bebida:      { percapitaGramas: 350, fatorCorrecao: 1.00, fatorCoccao: 1.00 },
+  padaria:     { percapitaGramas: 60,  fatorCorrecao: 1.00, fatorCoccao: 1.00 },
+}
+
+const PALAVRAS_CATEGORIA: Array<{ palavras: string[]; categoria: Categoria }> = [
+  {
+    categoria: 'proteina',
+    palavras: ['carne', 'frango', 'peixe', 'camarao', 'file', 'bife', 'costela', 'pernil', 'lombo',
+      'linguica', 'hamburguer', 'lagosta', 'siri', 'caranguejo', 'polvo', 'lula', 'ostra',
+      'porco', 'suino', 'bovino', 'pato', 'ganso', 'cordeiro', 'cabrito', 'coelho', 'steak',
+      'picanha', 'alcatra', 'maminha', 'fraldinha', 'acem', 'patinho', 'bacon', 'paio',
+      'salsicha', 'presunto', 'mortadela', 'pepperoni', 'atum', 'sardinha', 'salmao',
+      'tilapia', 'robalo', 'dourado', 'bacalhau', 'mariscos', 'mexilhao', 'vieiras'],
+  },
+  {
+    categoria: 'carboidrato',
+    palavras: ['arroz', 'feijao', 'macarrao', 'massa', 'batata', 'polenta', 'lentilha', 'grao',
+      'cuscuz', 'fuba', 'quinoa', 'milho', 'tapioca', 'inhame', 'aipim', 'mandioca',
+      'pao', 'torrada', 'biscoito', 'bolacha', 'farofa', 'farinha', 'trigo', 'aveia',
+      'cevada', 'centeio', 'chia', 'linhaça', 'linhaça', 'amido'],
+  },
+  {
+    categoria: 'vegetal',
+    palavras: ['alface', 'tomate', 'cebola', 'cenoura', 'abobrinha', 'berinjela', 'pepino',
+      'couve', 'repolho', 'brocolis', 'espinafre', 'quiabo', 'chuchu', 'jilo',
+      'vagem', 'beterraba', 'pimentao', 'aspargo', 'alcachofra', 'cogumelo', 'champignon',
+      'alho', 'alho-poro', 'cebola', 'palmito', 'aipo', 'rucula', 'agriao',
+      'endiva', 'escarola', 'chicoria', 'nabo', 'rabanete', 'ervilha', 'grao de bico'],
+  },
+  {
+    categoria: 'fruta',
+    palavras: ['banana', 'maca', 'laranja', 'limao', 'abacaxi', 'mamao', 'manga', 'melao',
+      'uva', 'pera', 'pessego', 'morango', 'caju', 'goiaba', 'maracuja', 'acerola',
+      'caqui', 'figo', 'abacate', 'kiwi', 'melancia', 'cereja', 'ameixa', 'damasco',
+      'framboesa', 'mirtilo', 'pitanga', 'jabuticaba', 'cupuacu', 'açai', 'acai'],
+  },
+  {
+    categoria: 'laticinios',
+    palavras: ['queijo', 'iogurte', 'requeijao', 'creme de leite', 'leite', 'manteiga', 'nata',
+      'coalhada', 'ricota', 'mozarela', 'musarela', 'parmesao', 'cheddar', 'brie',
+      'gorgonzola', 'cottage', 'catupiry', 'cream cheese', 'ghee'],
+  },
+  {
+    categoria: 'bebida',
+    palavras: ['suco', 'agua', 'cerveja', 'vinho', 'whisky', 'rum', 'cachaca', 'vodka',
+      'refrigerante', 'coca', 'guarana', 'energetico', 'cha', 'cafe', 'leite',
+      'isotonico', 'drink', 'cocktail', 'espumante', 'sake'],
+  },
+  {
+    categoria: 'padaria',
+    palavras: ['pao', 'baguete', 'croissant', 'brioche', 'ciabatta', 'focaccia', 'broa',
+      'torrada', 'bisnaga', 'pao de queijo', 'cucao', 'cucão'],
+  },
+]
+
+function norm(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+export function classificarIngredienteDesconhecido(nome: string): Ingrediente {
+  const n = norm(nome)
+  for (const { palavras, categoria } of PALAVRAS_CATEGORIA) {
+    if (palavras.some(p => n.includes(p))) {
+      const d = DEFAULTS_POR_CATEGORIA[categoria]
+      return { nome, categoria, ...d, sinonimos: [] }
+    }
+  }
+  // fallback genérico → tempero/condimento
+  const d = DEFAULTS_POR_CATEGORIA.tempero
+  return { nome, categoria: 'tempero', ...d, sinonimos: [] }
+}
+
 // Busca inteligente — retorna sugestões para o termo digitado
 export function buscarIngrediente(termo: string): Ingrediente[] {
   if (!termo || termo.length < 2) return []
-  const t = termo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  return DB.filter(ing => {
-    const nome = ing.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    const sins = ing.sinonimos.map(s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+  const t = norm(termo)
+  const resultados = DB.filter(ing => {
+    const nome = norm(ing.nome)
+    const sins = ing.sinonimos.map(norm)
     return nome.includes(t) || sins.some(s => s.includes(t))
   }).slice(0, 6)
+
+  // Se nenhum resultado no DB, cria um ingrediente a partir da classificação automática
+  if (resultados.length === 0) {
+    return [classificarIngredienteDesconhecido(termo)]
+  }
+  return resultados
 }
 
 export function encontrarIngrediente(nome: string): Ingrediente | undefined {
-  const t = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const t = norm(nome)
   return DB.find(ing => {
-    const n = ing.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    const sins = ing.sinonimos.map(s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+    const n = norm(ing.nome)
+    const sins = ing.sinonimos.map(norm)
     return n === t || sins.includes(t)
   })
 }

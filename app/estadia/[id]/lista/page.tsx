@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
 import { formatarPeso } from '@/lib/lista-compras'
 
-interface Ingrediente { nome: string; qtdPorEquiv: number; fc: number; categoria: string }
+interface Ingrediente { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
 interface Prato { id: string; nome: string; ingredientes: Ingrediente[] }
 interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
 interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numeroDias: number; dias: Dia[] }
@@ -42,7 +42,7 @@ export default function ListaComprasPage() {
 
     for (const prato of dia.pratos) {
       for (const ing of prato.ingredientes) {
-        const liquido = ing.qtdPorEquiv * equiv
+        const liquido = (ing.gramasPorPessoa / 1000) * equiv
         const bruto = liquido * ing.fc
         if (!totais[ing.nome]) totais[ing.nome] = { categoria: ing.categoria, liquido: 0, bruto: 0 }
         totais[ing.nome].liquido += liquido
