@@ -82,7 +82,7 @@ export function gerarTextoWhatsApp(params: {
     }
     linhas.push('')
   }
-  linhas.push('_Gerado pelo app despensa_')
+  linhas.push('_Gerado pelo app Despensa_')
   return linhas.join('\n')
 }
 
@@ -143,7 +143,7 @@ export function gerarHTMLImpressao(params: {
 </head>
 <body>
   <div class="header">
-    <h1>despensa</h1>
+    <h1>Despensa</h1>
     <div class="header-info">
       <span><strong>Evento:</strong> ${params.nomeEvento}</span>
       ${params.data ? `<span><strong>Data:</strong> ${params.data}</span>` : ''}
@@ -152,7 +152,7 @@ export function gerarHTMLImpressao(params: {
     </div>
   </div>
   ${linhasGrupos}
-  <div class="footer">Lista gerada pelo app despensa</div>
+  <div class="footer">Lista gerada pelo app Despensa</div>
   <script>window.onload = function(){ window.print(); }</script>
 </body>
 </html>`

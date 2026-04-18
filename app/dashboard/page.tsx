@@ -34,7 +34,7 @@ export default function DashboardPage() {
     <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
 
       <header className="mb-8">
-        <span className="text-xl font-bold tracking-tight" style={{ color: '#1A2E25' }}>despensa</span>
+        <span className="text-xl font-bold tracking-tight" style={{ color: '#1A2E25' }}>Despensa</span>
       </header>
 
       {/* Ferramentas */}

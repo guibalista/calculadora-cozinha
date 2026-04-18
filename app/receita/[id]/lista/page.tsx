@@ -41,11 +41,16 @@ export default function ListaReceitaPage() {
   const [evento, setEvento] = useState<Evento | null>(null)
   const [cenario, setCenario] = useState<Cenario>('conservador')
   const [gerando, setGerando] = useState(false)
+  const [overrides, setOverrides] = useState<Record<string, number>>({})
+  const [editando, setEditando] = useState<string | null>(null)
+  const [editInput, setEditInput] = useState('')
 
   useEffect(() => {
     const eventos = JSON.parse(localStorage.getItem('eventos') || '[]')
     setEvento(eventos.find((e: Evento) => e.id === id) ?? null)
   }, [id])
+
+  useEffect(() => { setOverrides({}) }, [cenario])
 
   if (!evento) return (
     <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
@@ -67,10 +72,10 @@ export default function ListaReceitaPage() {
     }
   }
 
-  const itensList: ItemLista[] = Object.entries(totais).map(([nome, v]) => ({
-    nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.liquido,
-    unidade: converterUnidade(nome, v.bruto),
-  }))
+  const itensList: ItemLista[] = Object.entries(totais).map(([nome, v]) => {
+    const bruto = overrides[nome] ?? v.bruto
+    return { nome, categoria: v.categoria, brutoKg: bruto, liquidoKg: v.liquido, unidade: converterUnidade(nome, bruto) }
+  })
   const grupos = agruparPorSetor(itensList)
   const totalItens = itensList.length
 
@@ -84,7 +89,18 @@ export default function ListaReceitaPage() {
     ? new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : undefined
 
-  const nomeCenario = cenario === 'moderado' ? 'Moderado (−15%)' : cenario === 'conservador' ? 'Conservador (padrão)' : 'Agressivo (+25%)'
+  const nomeCenario = cenario === 'moderado' ? 'Moderado (-15%)' : cenario === 'conservador' ? 'Conservador (padrao)' : 'Agressivo (+25%)'
+
+  function iniciarEdit(nome: string, brutoKg: number) {
+    setEditando(nome)
+    setEditInput(String(Math.round(brutoKg * 1000)))
+  }
+  function confirmarEdit() {
+    if (!editando) return
+    const g = parseFloat(editInput)
+    if (!isNaN(g) && g > 0) setOverrides(p => ({ ...p, [editando]: g / 1000 }))
+    setEditando(null)
+  }
 
   async function exportarPDF() {
     setGerando(true)
@@ -138,6 +154,11 @@ export default function ListaReceitaPage() {
       <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Lista de compras</h1>
       <p className="text-sm mb-6" style={{ color: '#5A7A68' }}>
         {evento.nome} · {evento.totalPessoas} pessoas · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
+        {Object.keys(overrides).length > 0 && (
+          <span className="ml-2 text-xs font-medium" style={{ color: '#128C7E' }}>
+            · {Object.keys(overrides).length} editado{Object.keys(overrides).length > 1 ? 's' : ''}
+          </span>
+        )}
       </p>
 
       {/* Perfil de compra */}
@@ -185,8 +206,35 @@ export default function ListaReceitaPage() {
                     {item.unidade && <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{item.unidade}</p>}
                   </div>
                   <div className="text-right ml-4">
-                    <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>{formatarPeso(item.brutoKg)}</p>
-                    <p className="text-xs" style={{ color: '#5A7A68' }}>{formatarPeso(item.liquidoKg)} líq.</p>
+                    {editando === item.nome ? (
+                      <div className="flex items-center gap-1 justify-end">
+                        <input
+                          type="number" value={editInput}
+                          onChange={e => setEditInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
+                          autoFocus
+                          className="w-16 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
+                          style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
+                        <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
+                        <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
+                        <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <p className="font-semibold text-base"
+                          style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
+                          {formatarPeso(item.brutoKg)}
+                        </p>
+                        <button
+                          onClick={() => iniciarEdit(item.nome, item.brutoKg)}
+                          className="text-base opacity-40 hover:opacity-80 transition-opacity"
+                          style={{ color: '#7BA892', lineHeight: 1 }}
+                          title="Editar quantidade">
+                          ✎
+                        </button>
+                      </div>
+                    )}
+                    <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>{formatarPeso(item.liquidoKg)} líq.</p>
                   </div>
                 </div>
               ))}
@@ -218,7 +266,6 @@ export default function ListaReceitaPage() {
             </div>
           </div>
 
-          {/* Botões rodapé */}
           <div className="grid grid-cols-2 gap-3 pt-2 pb-4">
             <button onClick={enviarWhatsApp}
               className="py-4 rounded-2xl font-semibold text-sm"

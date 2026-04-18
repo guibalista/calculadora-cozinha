@@ -5,7 +5,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col" style={{ background: '#F0F7F2' }}>
 
       <header className="flex items-center justify-between px-6 pt-8 pb-4">
-        <span className="text-xl font-bold tracking-tight" style={{ color: '#1A2E25' }}>despensa</span>
+        <span className="text-xl font-bold tracking-tight" style={{ color: '#1A2E25' }}>Despensa</span>
         <Link href="/login" className="text-sm font-medium underline" style={{ color: '#128C7E' }}>Entrar</Link>
       </header>
 

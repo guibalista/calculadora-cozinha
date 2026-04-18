@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex flex-col px-6 py-10 max-w-sm mx-auto w-full justify-center" style={{ background: '#F0F7F2' }}>
-      <Link href="/" className="text-xl font-bold tracking-tight mb-10 block" style={{ color: '#1A2E25' }}>despensa</Link>
+      <Link href="/" className="text-xl font-bold tracking-tight mb-10 block" style={{ color: '#1A2E25' }}>Despensa</Link>
 
       <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Bem-vindo de volta</h1>
       <p className="text-sm mb-8" style={{ color: '#5A7A68' }}>Entre na sua conta</p>

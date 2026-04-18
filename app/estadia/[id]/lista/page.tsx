@@ -45,11 +45,17 @@ export default function ListaComprasPage() {
   const [estadia, setEstadia] = useState<Estadia | null>(null)
   const [cenario, setCenario] = useState<Cenario>('conservador')
   const [gerando, setGerando] = useState(false)
+  const [overrides, setOverrides] = useState<Record<string, number>>({})
+  const [editando, setEditando] = useState<string | null>(null)
+  const [editInput, setEditInput] = useState('')
 
   useEffect(() => {
     const estadias = JSON.parse(localStorage.getItem('estadias') || '[]')
     setEstadia(estadias.find((e: Estadia) => e.id === id) ?? null)
   }, [id])
+
+  // Resetar overrides ao trocar cenário
+  useEffect(() => { setOverrides({}) }, [cenario])
 
   if (!estadia) return (
     <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
@@ -77,10 +83,10 @@ export default function ListaComprasPage() {
     }
   }
 
-  const itensList: ItemLista[] = Object.entries(totaisMap).map(([nome, v]) => ({
-    nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.liquido,
-    unidade: converterUnidade(nome, v.bruto),
-  }))
+  const itensList: ItemLista[] = Object.entries(totaisMap).map(([nome, v]) => {
+    const bruto = overrides[nome] ?? v.bruto
+    return { nome, categoria: v.categoria, brutoKg: bruto, liquidoKg: v.liquido, unidade: converterUnidade(nome, bruto) }
+  })
   const grupos = agruparPorSetor(itensList)
   const totalItens = itensList.length
   const diasComPratos = estadia.dias.filter(d => d.pratos.length > 0).length
@@ -96,7 +102,18 @@ export default function ListaComprasPage() {
     ? `${new Date(estadia.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} a ${new Date(estadia.dataFim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
     : undefined
 
-  const nomeCenario = cenario === 'moderado' ? 'Moderado (−15%)' : cenario === 'conservador' ? 'Conservador (padrão)' : 'Agressivo (+25%)'
+  const nomeCenario = cenario === 'moderado' ? 'Moderado (-15%)' : cenario === 'conservador' ? 'Conservador (padrao)' : 'Agressivo (+25%)'
+
+  function iniciarEdit(nome: string, brutoKg: number) {
+    setEditando(nome)
+    setEditInput(String(Math.round(brutoKg * 1000)))
+  }
+  function confirmarEdit() {
+    if (!editando) return
+    const g = parseFloat(editInput)
+    if (!isNaN(g) && g > 0) setOverrides(p => ({ ...p, [editando]: g / 1000 }))
+    setEditando(null)
+  }
 
   async function exportarPDF() {
     setGerando(true)
@@ -150,6 +167,11 @@ export default function ListaComprasPage() {
       <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Lista de compras</h1>
       <p className="text-sm mb-6" style={{ color: '#5A7A68' }}>
         {estadia.nome} · {diasComPratos} dia{diasComPratos !== 1 ? 's' : ''} · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
+        {Object.keys(overrides).length > 0 && (
+          <span className="ml-2 text-xs font-medium" style={{ color: '#128C7E' }}>
+            · {Object.keys(overrides).length} editado{Object.keys(overrides).length > 1 ? 's' : ''}
+          </span>
+        )}
       </p>
 
       {/* Perfil de compra */}
@@ -198,8 +220,35 @@ export default function ListaComprasPage() {
                     {item.unidade && <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{item.unidade}</p>}
                   </div>
                   <div className="text-right ml-4">
-                    <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>{formatarPeso(item.brutoKg)}</p>
-                    <p className="text-xs" style={{ color: '#5A7A68' }}>{formatarPeso(item.liquidoKg)} líq.</p>
+                    {editando === item.nome ? (
+                      <div className="flex items-center gap-1 justify-end">
+                        <input
+                          type="number" value={editInput}
+                          onChange={e => setEditInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
+                          autoFocus
+                          className="w-16 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
+                          style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
+                        <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
+                        <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
+                        <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <p className="font-semibold text-base"
+                          style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
+                          {formatarPeso(item.brutoKg)}
+                        </p>
+                        <button
+                          onClick={() => iniciarEdit(item.nome, item.brutoKg)}
+                          className="text-base opacity-40 hover:opacity-80 transition-opacity"
+                          style={{ color: '#7BA892', lineHeight: 1 }}
+                          title="Editar quantidade">
+                          ✎
+                        </button>
+                      </div>
+                    )}
+                    <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>{formatarPeso(item.liquidoKg)} líq.</p>
                   </div>
                 </div>
               ))}

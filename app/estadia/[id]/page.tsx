@@ -152,6 +152,7 @@ export default function EstadiaPage() {
     </div>
   )
 
+  const totalRefeicoes = estadia.dias.reduce((sum, d) => sum + d.pratos.length, 0)
   const dia = estadia.dias[diaAtivo]
   const hospedesTotais = somarHospedes(
     { homens: estadia.homens, mulheres: estadia.mulheres, criancas: estadia.criancas },
@@ -335,6 +336,23 @@ export default function EstadiaPage() {
             style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
             + Adicionar refeição ao cardápio
           </button>
+        )}
+
+        {!adicionandoPrato && (
+          <div className="flex gap-3 pt-2 pb-2">
+            <Link href="/dashboard"
+              className="px-5 py-4 rounded-2xl font-semibold text-sm"
+              style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
+              ← Início
+            </Link>
+            {totalRefeicoes > 0 && (
+              <Link href={`/estadia/${id}/lista`}
+                className="flex-1 py-4 rounded-2xl font-semibold text-sm text-center"
+                style={{ background: '#128C7E', color: '#fff' }}>
+                Gerar lista de compras 🛒
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </main>
