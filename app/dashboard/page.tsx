@@ -11,24 +11,30 @@ interface Estadia {
   numeroDias: number
 }
 
+interface Evento {
+  id: string
+  nome: string
+  data?: string
+  homens: number
+  mulheres: number
+  criancas: number
+  totalPessoas: number
+}
+
 export default function DashboardPage() {
   const [estadias, setEstadias] = useState<Estadia[]>([])
+  const [eventos, setEventos] = useState<Evento[]>([])
 
   useEffect(() => {
-    const salvas = JSON.parse(localStorage.getItem('estadias') || '[]')
-    setEstadias(salvas)
+    setEstadias(JSON.parse(localStorage.getItem('estadias') || '[]'))
+    setEventos(JSON.parse(localStorage.getItem('eventos') || '[]'))
   }, [])
 
   return (
     <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F7F5F2' }}>
 
-      <header className="flex items-center justify-between mb-8">
+      <header className="mb-8">
         <span className="text-xl font-bold tracking-tight" style={{ color: '#222' }}>despensa</span>
-        <Link href="/estadia/nova"
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-sm font-semibold"
-          style={{ background: '#222', color: '#fff' }}>
-          + Nova estadia
-        </Link>
       </header>
 
       {/* Ferramentas */}
@@ -40,52 +46,74 @@ export default function DashboardPage() {
           <p className="font-semibold text-sm" style={{ color: '#222' }}>Planejar estadia</p>
           <p className="text-xs leading-snug" style={{ color: '#717171' }}>Cardápio por dia + lista de compras</p>
         </Link>
-        <Link href="/calculadora"
+        <Link href="/receita/nova"
           className="p-4 rounded-3xl flex flex-col gap-2"
           style={{ background: '#fff', border: '1.5px solid #EBEBEB' }}>
-          <span className="text-2xl">🧮</span>
-          <p className="font-semibold text-sm" style={{ color: '#222' }}>Calculadora</p>
-          <p className="text-xs leading-snug" style={{ color: '#717171' }}>Custo de receita e preço de venda</p>
+          <span className="text-2xl">🍽️</span>
+          <p className="font-semibold text-sm" style={{ color: '#222' }}>Planejar receita</p>
+          <p className="text-xs leading-snug" style={{ color: '#717171' }}>Monte o cardápio de um evento</p>
         </Link>
       </div>
 
-      {/* Estadias */}
-      <h2 className="text-base font-semibold mb-3" style={{ color: '#222' }}>Estadias recentes</h2>
+      {/* Estadias recentes */}
+      {estadias.length > 0 && (
+        <>
+          <h2 className="text-base font-semibold mb-3" style={{ color: '#222' }}>Estadias recentes</h2>
+          <div className="space-y-3 mb-6">
+            {estadias.map(e => {
+              const total = e.homens + e.mulheres + e.criancas
+              return (
+                <Link key={e.id} href={`/estadia/${e.id}`}
+                  className="flex items-center justify-between p-5 rounded-3xl bg-white active:opacity-70"
+                  style={{ border: '1.5px solid #EBEBEB' }}>
+                  <div>
+                    <p className="font-semibold text-base mb-1" style={{ color: '#222' }}>{e.nome}</p>
+                    <p className="text-sm" style={{ color: '#717171' }}>
+                      {total} hóspede{total !== 1 ? 's' : ''}
+                      {e.homens > 0 && ` · ${e.homens}H`}
+                      {e.mulheres > 0 && ` ${e.mulheres}M`}
+                      {e.criancas > 0 && ` ${e.criancas}C`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium" style={{ color: '#9B8B7A' }}>{e.numeroDias} dia{e.numeroDias !== 1 ? 's' : ''}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#BBBBBB' }}>→</p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </>
+      )}
 
-      {estadias.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="font-semibold mb-1" style={{ color: '#222' }}>Nenhuma estadia ainda</p>
-          <p className="text-sm mb-6" style={{ color: '#717171' }}>Crie a primeira para começar a planejar</p>
-          <Link href="/estadia/nova"
-            className="px-6 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: '#222', color: '#fff' }}>
-            Criar estadia
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {estadias.map(e => {
-            const total = e.homens + e.mulheres + e.criancas
-            return (
-              <Link key={e.id} href={`/estadia/${e.id}`}
+      {/* Eventos recentes */}
+      {eventos.length > 0 && (
+        <>
+          <h2 className="text-base font-semibold mb-3" style={{ color: '#222' }}>Receitas recentes</h2>
+          <div className="space-y-3 mb-6">
+            {eventos.map(e => (
+              <Link key={e.id} href={`/receita/${e.id}`}
                 className="flex items-center justify-between p-5 rounded-3xl bg-white active:opacity-70"
                 style={{ border: '1.5px solid #EBEBEB' }}>
                 <div>
                   <p className="font-semibold text-base mb-1" style={{ color: '#222' }}>{e.nome}</p>
                   <p className="text-sm" style={{ color: '#717171' }}>
-                    {total} hóspede{total !== 1 ? 's' : ''}
-                    {e.homens > 0 && ` · ${e.homens}H`}
-                    {e.mulheres > 0 && ` ${e.mulheres}M`}
-                    {e.criancas > 0 && ` ${e.criancas}C`}
+                    {e.totalPessoas} pessoa{e.totalPessoas !== 1 ? 's' : ''}
+                    {e.data && ` · ${new Date(e.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium" style={{ color: '#9B8B7A' }}>{e.numeroDias} dia{e.numeroDias !== 1 ? 's' : ''}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#BBBBBB' }}>→</p>
-                </div>
+                <p className="text-xs" style={{ color: '#BBBBBB' }}>→</p>
               </Link>
-            )
-          })}
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Estado vazio */}
+      {estadias.length === 0 && eventos.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="font-semibold mb-1" style={{ color: '#222' }}>Nenhum planejamento ainda</p>
+          <p className="text-sm mb-6" style={{ color: '#717171' }}>Crie uma estadia ou planeje uma receita para começar</p>
         </div>
       )}
     </main>

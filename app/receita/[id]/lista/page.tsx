@@ -2,14 +2,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { totalEquivalente, somarHospedes } from '@/lib/percapita'
+import { totalEquivalente } from '@/lib/percapita'
 import { formatarPeso } from '@/lib/lista-compras'
 import { agruparPorSetor, gerarTextoWhatsApp, gerarHTMLImpressao, type ItemLista } from '@/lib/setores'
 
-interface Ingrediente { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
-interface Prato { id: string; nome: string; ingredientes: Ingrediente[] }
-interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
-interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numeroDias: number; dataInicio?: string; dataFim?: string; dias: Dia[] }
+interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
+interface Refeicao { id: string; nome: string; ingredientes: IngPrato[] }
+interface Evento { id: string; nome: string; data?: string; homens: number; mulheres: number; criancas: number; totalPessoas: number; refeicoes: Refeicao[] }
 
 type Cenario = 'moderado' | 'conservador' | 'agressivo'
 const FATORES: Record<Cenario, number> = { moderado: 0.85, conservador: 1.00, agressivo: 1.25 }
@@ -21,15 +20,12 @@ const PESOS_UNITARIOS: Record<string, { unidade: string; gramas: number }> = {
   'Maçã': { unidade: 'und.', gramas: 180 }, 'Batata inglesa': { unidade: 'und.', gramas: 180 },
   'Batata-doce': { unidade: 'und.', gramas: 200 }, 'Cenoura': { unidade: 'und.', gramas: 100 },
   'Abobrinha': { unidade: 'und.', gramas: 350 }, 'Berinjela': { unidade: 'und.', gramas: 400 },
-  'Brócolis': { unidade: 'und.', gramas: 500 }, 'Couve-flor': { unidade: 'und.', gramas: 700 },
-  'Pimentão vermelho': { unidade: 'und.', gramas: 150 }, 'Pimentão verde': { unidade: 'und.', gramas: 150 },
-  'Pimentão amarelo': { unidade: 'und.', gramas: 150 }, 'Ovos': { unidade: 'und.', gramas: 60 },
-  'Pão francês': { unidade: 'und.', gramas: 50 }, 'Pão de forma': { unidade: 'pacote', gramas: 500 },
-  'Manga': { unidade: 'und.', gramas: 300 }, 'Mamão': { unidade: 'und.', gramas: 800 },
-  'Abacaxi': { unidade: 'und.', gramas: 1200 }, 'Melão': { unidade: 'und.', gramas: 1200 },
-  'Melancia': { unidade: 'und.', gramas: 5000 }, 'Coco fresco': { unidade: 'und.', gramas: 900 },
-  'Mandioca': { unidade: 'und.', gramas: 800 }, 'Milho verde': { unidade: 'und.', gramas: 250 },
-  'Frango inteiro': { unidade: 'und.', gramas: 1800 },
+  'Brócolis': { unidade: 'und.', gramas: 500 }, 'Pimentão vermelho': { unidade: 'und.', gramas: 150 },
+  'Pimentão verde': { unidade: 'und.', gramas: 150 }, 'Ovos': { unidade: 'und.', gramas: 60 },
+  'Pão francês': { unidade: 'und.', gramas: 50 }, 'Manga': { unidade: 'und.', gramas: 300 },
+  'Mamão': { unidade: 'und.', gramas: 800 }, 'Abacaxi': { unidade: 'und.', gramas: 1200 },
+  'Melão': { unidade: 'und.', gramas: 1200 }, 'Mandioca': { unidade: 'und.', gramas: 800 },
+  'Milho verde': { unidade: 'und.', gramas: 250 }, 'Frango inteiro': { unidade: 'und.', gramas: 1800 },
 }
 
 function converterUnidade(nome: string, brutoKg: number): string | null {
@@ -39,68 +35,60 @@ function converterUnidade(nome: string, brutoKg: number): string | null {
   return qtd >= 1 ? `≈ ${qtd} ${u.unidade}` : null
 }
 
-export default function ListaComprasPage() {
+export default function ListaReceitaPage() {
   const { id } = useParams<{ id: string }>()
-  const [estadia, setEstadia] = useState<Estadia | null>(null)
+  const [evento, setEvento] = useState<Evento | null>(null)
   const [cenario, setCenario] = useState<Cenario>('conservador')
 
   useEffect(() => {
-    const estadias = JSON.parse(localStorage.getItem('estadias') || '[]')
-    setEstadia(estadias.find((e: Estadia) => e.id === id) ?? null)
+    const eventos = JSON.parse(localStorage.getItem('eventos') || '[]')
+    setEvento(eventos.find((e: Evento) => e.id === id) ?? null)
   }, [id])
 
-  if (!estadia) return (
+  if (!evento) return (
     <div className="flex items-center justify-center min-h-screen" style={{ background: '#F7F5F2' }}>
       <p style={{ color: '#717171' }}>Carregando...</p>
     </div>
   )
 
   const fator = FATORES[cenario]
+  const equiv = totalEquivalente({ homens: evento.homens, mulheres: evento.mulheres, criancas: evento.criancas })
 
-  const totaisMap: Record<string, { categoria: string; liquido: number; bruto: number }> = {}
-  for (const dia of estadia.dias) {
-    const hospedes = somarHospedes(
-      { homens: estadia.homens, mulheres: estadia.mulheres, criancas: estadia.criancas },
-      { homens: dia.extrasHomens, mulheres: dia.extrasMulheres, criancas: dia.extrasCriancas }
-    )
-    const equiv = totalEquivalente(hospedes)
-    for (const prato of dia.pratos) {
-      for (const ing of prato.ingredientes) {
-        const liquido = (ing.gramasPorPessoa / 1000) * equiv * fator
-        const bruto = liquido * ing.fc
-        if (!totaisMap[ing.nome]) totaisMap[ing.nome] = { categoria: ing.categoria, liquido: 0, bruto: 0 }
-        totaisMap[ing.nome].liquido += liquido
-        totaisMap[ing.nome].bruto += bruto
-      }
+  const totais: Record<string, { categoria: string; liquido: number; bruto: number }> = {}
+  for (const ref of evento.refeicoes) {
+    for (const ing of ref.ingredientes) {
+      const liquido = (ing.gramasPorPessoa / 1000) * equiv * fator
+      const bruto = liquido * ing.fc
+      if (!totais[ing.nome]) totais[ing.nome] = { categoria: ing.categoria, liquido: 0, bruto: 0 }
+      totais[ing.nome].liquido += liquido
+      totais[ing.nome].bruto += bruto
     }
   }
 
-  const itensList: ItemLista[] = Object.entries(totaisMap).map(([nome, v]) => ({
+  const itensList: ItemLista[] = Object.entries(totais).map(([nome, v]) => ({
     nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.liquido,
     unidade: converterUnidade(nome, v.bruto),
   }))
   const grupos = agruparPorSetor(itensList)
   const totalItens = itensList.length
-  const diasComPratos = estadia.dias.filter(d => d.pratos.length > 0).length
-  const totalPessoas = estadia.homens + estadia.mulheres + estadia.criancas
 
   const descPessoas = [
-    estadia.homens > 0 ? `${estadia.homens}H` : '',
-    estadia.mulheres > 0 ? `${estadia.mulheres}M` : '',
-    estadia.criancas > 0 ? `${estadia.criancas}C` : '',
-  ].filter(Boolean).join(' ')
+    evento.homens > 0 ? `${evento.homens} homem${evento.homens > 1 ? 'ns' : ''}` : '',
+    evento.mulheres > 0 ? `${evento.mulheres} mulher${evento.mulheres > 1 ? 'es' : ''}` : '',
+    evento.criancas > 0 ? `${evento.criancas} criança${evento.criancas > 1 ? 's' : ''}` : '',
+  ].filter(Boolean).join(', ')
 
-  const periodo = estadia.dataInicio && estadia.dataFim
-    ? `${new Date(estadia.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} a ${new Date(estadia.dataFim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+  const dataFormatada = evento.data
+    ? new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : undefined
 
   const nomeCenario = cenario === 'moderado' ? 'Moderado (−15%)' : cenario === 'conservador' ? 'Conservador (padrão)' : 'Agressivo (+25%)'
 
   function exportarPDF() {
     const html = gerarHTMLImpressao({
-      nomeEvento: estadia!.nome,
-      data: periodo,
-      totalPessoas: `${totalPessoas} pessoas (${descPessoas})`,
+      nomeEvento: evento!.nome,
+      data: dataFormatada,
+      totalPessoas: `${evento!.totalPessoas} pessoas (${descPessoas})`,
       cenario: nomeCenario,
       grupos,
     })
@@ -112,9 +100,9 @@ export default function ListaComprasPage() {
 
   function enviarWhatsApp() {
     const texto = gerarTextoWhatsApp({
-      nomeEvento: estadia!.nome,
-      data: periodo,
-      totalPessoas: `${totalPessoas} pessoas`,
+      nomeEvento: evento!.nome,
+      data: dataFormatada,
+      totalPessoas: `${evento!.totalPessoas} pessoas`,
       cenario: nomeCenario,
       grupos,
     })
@@ -130,7 +118,7 @@ export default function ListaComprasPage() {
   return (
     <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F7F5F2' }}>
       <div className="flex items-center justify-between mb-6">
-        <Link href={`/estadia/${id}`} className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</Link>
+        <Link href={`/receita/${id}`} className="text-sm font-medium underline" style={{ color: '#222' }}>← Voltar</Link>
         {totalItens > 0 && (
           <div className="flex gap-2">
             <button onClick={enviarWhatsApp}
@@ -149,10 +137,10 @@ export default function ListaComprasPage() {
 
       <h1 className="text-2xl font-bold mb-1" style={{ color: '#222' }}>Lista de compras</h1>
       <p className="text-sm mb-6" style={{ color: '#717171' }}>
-        {estadia.nome} · {diasComPratos} dia{diasComPratos !== 1 ? 's' : ''} · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
+        {evento.nome} · {evento.totalPessoas} pessoas · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
       </p>
 
-      {/* Perfil de compra */}
+      {/* Cenário */}
       <div className="bg-white rounded-3xl p-4 mb-6" style={{ border: '1.5px solid #EBEBEB' }}>
         <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Perfil de compra</p>
         <div className="grid grid-cols-3 gap-2">
@@ -167,20 +155,14 @@ export default function ListaComprasPage() {
             </button>
           ))}
         </div>
-        <p className="text-xs mt-3 text-center" style={{ color: '#9B8B7A' }}>
-          {cenario === 'moderado' && 'Apetite leve — ligeiramente abaixo do padrão'}
-          {cenario === 'conservador' && 'Quantidade padrão — calculada por pessoa'}
-          {cenario === 'agressivo' && 'Garantido sobrar — ideal para grupos com muito apetite'}
-        </p>
       </div>
 
       {totalItens === 0 ? (
         <div className="text-center py-16">
-          <p className="text-lg mb-2" style={{ color: '#222' }}>Nenhum prato adicionado</p>
-          <p className="text-sm mb-6" style={{ color: '#717171' }}>Adicione refeições nos dias para gerar a lista</p>
-          <Link href={`/estadia/${id}`} className="px-6 py-3 rounded-2xl font-semibold text-sm"
+          <p className="text-lg mb-2" style={{ color: '#222' }}>Nenhuma refeição adicionada</p>
+          <Link href={`/receita/${id}`} className="px-6 py-3 rounded-2xl font-semibold text-sm"
             style={{ background: '#222', color: '#fff' }}>
-            Planejar cardápio
+            Montar cardápio
           </Link>
         </div>
       ) : (
@@ -210,22 +192,18 @@ export default function ListaComprasPage() {
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Resumo</p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#717171' }}>Estadia</span>
-                <span style={{ color: '#222' }}>{estadia.nome}</span>
+                <span style={{ color: '#717171' }}>Evento</span>
+                <span style={{ color: '#222' }}>{evento.nome}</span>
               </div>
-              {periodo && (
+              {dataFormatada && (
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#717171' }}>Período</span>
-                  <span style={{ color: '#222' }}>{periodo}</span>
+                  <span style={{ color: '#717171' }}>Data</span>
+                  <span style={{ color: '#222' }}>{dataFormatada}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#717171' }}>Hóspedes</span>
-                <span style={{ color: '#222' }}>{totalPessoas} pessoas ({descPessoas})</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: '#717171' }}>Dias planejados</span>
-                <span style={{ color: '#222' }}>{diasComPratos} de {estadia.numeroDias}</span>
+                <span style={{ color: '#717171' }}>Pessoas</span>
+                <span style={{ color: '#222' }}>{descPessoas}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span style={{ color: '#717171' }}>Cenário</span>
@@ -234,6 +212,7 @@ export default function ListaComprasPage() {
             </div>
           </div>
 
+          {/* Botões export duplicados no rodapé */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button onClick={enviarWhatsApp}
               className="py-4 rounded-2xl font-semibold text-sm"
