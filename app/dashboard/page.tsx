@@ -42,14 +42,12 @@ export default function DashboardPage() {
         <Link href="/estadia/nova"
           className="p-4 rounded-3xl flex flex-col gap-2"
           style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
-          <span className="text-2xl">🏠</span>
           <p className="font-semibold text-sm" style={{ color: '#1A2E25' }}>Planejar estadia</p>
           <p className="text-xs leading-snug" style={{ color: '#5A7A68' }}>Cardápio por dia + lista de compras</p>
         </Link>
         <Link href="/receita/nova"
           className="p-4 rounded-3xl flex flex-col gap-2"
           style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
-          <span className="text-2xl">🍽️</span>
           <p className="font-semibold text-sm" style={{ color: '#1A2E25' }}>Planejar receita</p>
           <p className="text-xs leading-snug" style={{ color: '#5A7A68' }}>Monte o cardápio de um evento</p>
         </Link>

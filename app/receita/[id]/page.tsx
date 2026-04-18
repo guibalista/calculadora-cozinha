@@ -144,19 +144,21 @@ export default function ReceitaPage() {
   return (
     <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
       <div className="px-5 pt-8 pb-4">
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/dashboard" className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Dashboard</Link>
+        <Link href="/dashboard" className="text-sm font-medium block mb-5" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#1A2E25' }}>{evento.nome}</h1>
+            <p className="text-sm mt-1" style={{ color: '#5A7A68' }}>
+              {evento.totalPessoas} pessoas
+              {evento.data && ` · ${new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`}
+            </p>
+          </div>
           <Link href={`/receita/${id}/lista`}
-            className="px-4 py-2.5 rounded-2xl text-sm font-semibold"
+            className="flex-shrink-0 px-4 py-2.5 rounded-2xl text-sm font-semibold"
             style={{ background: '#128C7E', color: '#fff' }}>
-            Lista de compras 🛒
+            Lista de compras
           </Link>
         </div>
-        <h1 className="text-xl font-bold mb-0.5" style={{ color: '#1A2E25' }}>{evento.nome}</h1>
-        <p className="text-sm" style={{ color: '#5A7A68' }}>
-          {evento.totalPessoas} pessoas
-          {evento.data && ` · ${new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`}
-        </p>
       </div>
 
       <div className="px-5 space-y-4 pb-10">
@@ -280,7 +282,7 @@ export default function ReceitaPage() {
               <Link href={`/receita/${id}/lista`}
                 className="flex-1 py-4 rounded-2xl font-semibold text-sm text-center"
                 style={{ background: '#128C7E', color: '#fff' }}>
-                Gerar lista de compras 🛒
+                Gerar lista de compras
               </Link>
             )}
           </div>
