@@ -10,6 +10,7 @@ export async function baixarPDF(params: {
   totalPessoas: string
   cenario: string
   grupos: GrupoSetor[]
+  responsavel?: string
 }) {
   const { default: jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -38,7 +39,11 @@ export async function baixarPDF(params: {
 
   doc.setFontSize(8)
   doc.setTextColor(123, 168, 146)
-  doc.text(`Perfil: ${sanitize(params.cenario)}`, M, y)
+  const linhaInfo = [
+    `Perfil: ${sanitize(params.cenario)}`,
+    params.responsavel ? `Para: ${sanitize(params.responsavel)}` : null,
+  ].filter(Boolean).join('   ·   ')
+  doc.text(linhaInfo, M, y)
   y += 7
 
   doc.setDrawColor(212, 237, 224)

@@ -100,6 +100,8 @@ export default function PousadaPage() {
   const [hospedesLista, setHospedesLista] = useState<{ homens: number; mulheres: number; criancas: number } | null>(null)
   const [listaGerada, setListaGerada] = useState(false)
   const [gerando, setGerando] = useState(false)
+  const [modoOcupacao, setModoOcupacao] = useState<'hospedes' | 'quartos'>('hospedes')
+  const [quartosOcupados, setQuartosOcupados] = useState(1)
 
   // CMV
   const [editandoPreco, setEditandoPreco] = useState<string | null>(null)
@@ -108,7 +110,11 @@ export default function PousadaPage() {
   useEffect(() => {
     const lista = JSON.parse(localStorage.getItem('pousadas') || '[]')
     const found = lista.find((p: Pousada) => p.id === id)
-    if (found) { setPousada(found); setHospedesLista(found.hospedes) }
+    if (found) {
+      setPousada(found)
+      setHospedesLista(found.hospedes)
+      setQuartosOcupados(Math.ceil(found.totalQuartos / 2))
+    }
   }, [id])
 
   function salvar(nova: Pousada) {
@@ -138,10 +144,25 @@ export default function PousadaPage() {
     salvar({ ...pousada, cardapio: pousada.cardapio.filter(r => r.id !== refId) })
   }
 
+  // Hóspedes efetivos conforme modo de ocupação
+  function hospedesEfetivos(): { homens: number; mulheres: number; criancas: number } {
+    if (!pousada || !hospedesLista) return { homens: 0, mulheres: 0, criancas: 0 }
+    if (modoOcupacao === 'hospedes') return hospedesLista
+    const totalBase = pousada.hospedes.homens + pousada.hospedes.mulheres + pousada.hospedes.criancas
+    const porQuarto = pousada.totalQuartos > 0 ? totalBase / pousada.totalQuartos : 1
+    const totalEfetivo = Math.round(quartosOcupados * porQuarto)
+    const ratio = pousada.totalQuartos > 0 ? quartosOcupados / pousada.totalQuartos : 0
+    return {
+      homens: Math.round(pousada.hospedes.homens * ratio),
+      mulheres: Math.round(pousada.hospedes.mulheres * ratio),
+      criancas: Math.round(pousada.hospedes.criancas * ratio),
+    }
+  }
+
   // Lista consolidada
   function calcularLista(): ItemLista[] {
     if (!pousada || !hospedesLista) return []
-    const equiv = totalEquivalente(hospedesLista)
+    const equiv = totalEquivalente(hospedesEfetivos())
     const agg: Record<string, { categoria: string; bruto: number }> = {}
     for (const ref of pousada.cardapio) {
       for (const ing of ref.ingredientes) {
@@ -159,12 +180,19 @@ export default function PousadaPage() {
   const itensList = listaGerada ? calcularLista() : []
   const grupos = agruparPorSetor(itensList)
 
+  function descOcupacao(): string {
+    const hef = hospedesEfetivos()
+    const total = hef.homens + hef.mulheres + hef.criancas
+    if (modoOcupacao === 'quartos') return `${quartosOcupados} quarto${quartosOcupados > 1 ? 's' : ''} (≈${total} hóspedes)`
+    return `${total} hóspede${total !== 1 ? 's' : ''}`
+  }
+
   async function exportarPDF() {
     if (!pousada || grupos.length === 0) return
     setGerando(true)
     await baixarPDF({
       nomeEvento: pousada.nome,
-      totalPessoas: `${(hospedesLista?.homens ?? 0) + (hospedesLista?.mulheres ?? 0) + (hospedesLista?.criancas ?? 0)} hóspedes`,
+      totalPessoas: descOcupacao(),
       cenario: `${diasLista} dia${diasLista > 1 ? 's' : ''}`,
       grupos,
     })
@@ -175,7 +203,7 @@ export default function PousadaPage() {
     if (!pousada || grupos.length === 0) return
     const texto = gerarTextoWhatsApp({
       nomeEvento: pousada.nome,
-      totalPessoas: `${(hospedesLista?.homens ?? 0) + (hospedesLista?.mulheres ?? 0) + (hospedesLista?.criancas ?? 0)} hóspedes`,
+      totalPessoas: descOcupacao(),
       cenario: `${diasLista} dias`,
       grupos,
     })
@@ -383,7 +411,8 @@ export default function PousadaPage() {
                 <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
                   <p className="text-sm font-semibold mb-4" style={{ color: '#1A2E25' }}>Configurar compra</p>
 
-                  <div className="mb-4">
+                  {/* Dias */}
+                  <div className="mb-5">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm" style={{ color: '#5A7A68' }}>Dias de planejamento</p>
                       <span className="font-bold" style={{ color: '#128C7E' }}>{diasLista}</span>
@@ -396,25 +425,74 @@ export default function PousadaPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium" style={{ color: '#5A7A68' }}>Hóspedes no período</p>
-                    {['homens', 'mulheres', 'criancas'].map(campo => (
-                      <div key={campo} className="flex items-center justify-between">
-                        <span className="text-sm capitalize" style={{ color: '#1A2E25' }}>
-                          {campo === 'homens' ? 'Homens' : campo === 'mulheres' ? 'Mulheres' : 'Crianças'}
-                        </span>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => setHospedesLista(h => h ? { ...h, [campo]: Math.max(0, (h[campo as keyof typeof h] as number) - 1) } : h)}
-                            className="w-8 h-8 rounded-full" style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
-                          <span className="w-5 text-center font-semibold" style={{ color: '#1A2E25' }}>
-                            {hospedesLista[campo as keyof typeof hospedesLista]}
-                          </span>
-                          <button onClick={() => setHospedesLista(h => h ? { ...h, [campo]: (h[campo as keyof typeof h] as number) + 1 } : h)}
-                            className="w-8 h-8 rounded-full" style={{ background: '#128C7E', color: '#fff' }}>+</button>
-                        </div>
-                      </div>
-                    ))}
+                  {/* Modo de ocupação */}
+                  <div className="mb-4">
+                    <p className="text-xs font-medium mb-2" style={{ color: '#5A7A68' }}>Calcular por</p>
+                    <div className="flex gap-2">
+                      {[
+                        { key: 'hospedes', label: 'Hóspedes' },
+                        { key: 'quartos', label: 'Quartos ocupados' },
+                      ].map(m => (
+                        <button key={m.key} onClick={() => { setModoOcupacao(m.key as 'hospedes' | 'quartos'); setListaGerada(false) }}
+                          className="flex-1 py-2 rounded-xl text-sm font-medium"
+                          style={modoOcupacao === m.key
+                            ? { background: '#128C7E', color: '#fff' }
+                            : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Por quartos */}
+                  {modoOcupacao === 'quartos' && pousada && (
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm" style={{ color: '#5A7A68' }}>Quartos ocupados</p>
+                        <span className="font-bold" style={{ color: '#128C7E' }}>
+                          {quartosOcupados} / {pousada.totalQuartos}
+                        </span>
+                      </div>
+                      <input type="range" min="1" max={pousada.totalQuartos} value={quartosOcupados}
+                        onChange={e => { setQuartosOcupados(parseInt(e.target.value)); setListaGerada(false) }}
+                        className="w-full" style={{ accentColor: '#128C7E' }} />
+                      <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+                        <span>1 quarto</span><span>{pousada.totalQuartos} quartos</span>
+                      </div>
+                      {(() => {
+                        const hef = hospedesEfetivos()
+                        const total = hef.homens + hef.mulheres + hef.criancas
+                        return total > 0 ? (
+                          <p className="text-xs mt-2 font-medium" style={{ color: '#128C7E' }}>
+                            ≈ {total} hóspede{total !== 1 ? 's' : ''} estimados ({hef.homens}H {hef.mulheres}M {hef.criancas}C)
+                          </p>
+                        ) : null
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Por hóspedes */}
+                  {modoOcupacao === 'hospedes' && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium" style={{ color: '#5A7A68' }}>Hóspedes no período</p>
+                      {['homens', 'mulheres', 'criancas'].map(campo => (
+                        <div key={campo} className="flex items-center justify-between">
+                          <span className="text-sm capitalize" style={{ color: '#1A2E25' }}>
+                            {campo === 'homens' ? 'Homens' : campo === 'mulheres' ? 'Mulheres' : 'Crianças'}
+                          </span>
+                          <div className="flex items-center gap-3">
+                            <button onClick={() => { setHospedesLista(h => h ? { ...h, [campo]: Math.max(0, (h[campo as keyof typeof h] as number) - 1) } : h); setListaGerada(false) }}
+                              className="w-8 h-8 rounded-full" style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
+                            <span className="w-5 text-center font-semibold" style={{ color: '#1A2E25' }}>
+                              {hospedesLista[campo as keyof typeof hospedesLista]}
+                            </span>
+                            <button onClick={() => { setHospedesLista(h => h ? { ...h, [campo]: (h[campo as keyof typeof h] as number) + 1 } : h); setListaGerada(false) }}
+                              className="w-8 h-8 rounded-full" style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button onClick={() => setListaGerada(true)}
