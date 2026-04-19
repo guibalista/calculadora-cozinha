@@ -13,11 +13,13 @@ import { calcularCustoPorcao, calcularCMV, statusCMV, formatarMoeda, type PrecoI
 interface IngPrato { nome: string; gramasPorcao: number; fc: number; categoria: string }
 interface Refeicao { id: string; nome: string; tipo: string; ingredientes: IngPrato[] }
 interface Hospedes { homens: number; mulheres: number; criancas: number }
+interface Reserva { id: string; nome: string; homens: number; mulheres: number; criancas: number; dias: number }
 interface Pousada {
   id: string; nome: string; totalQuartos: number
   hospedes: Hospedes; refeicoes: string[]
   diariaTipo: string; valorDiaria: number
   cardapio: Refeicao[]; precos: PrecoIngrediente[]
+  reservas?: Reserva[]
 }
 
 type Aba = 'cardapio' | 'lista' | 'cmv'
@@ -102,6 +104,13 @@ export default function PousadaPage() {
   const [gerando, setGerando] = useState(false)
   const [modoOcupacao, setModoOcupacao] = useState<'hospedes' | 'quartos'>('hospedes')
   const [quartosOcupados, setQuartosOcupados] = useState(1)
+  const [modoPlano, setModoPlano] = useState<'estimativa' | 'reservas'>('estimativa')
+  const [addReserva, setAddReserva] = useState(false)
+  const [reservaNome, setReservaNome] = useState('')
+  const [reservaH, setReservaH] = useState(2)
+  const [reservaM, setReservaM] = useState(0)
+  const [reservaC, setReservaC] = useState(0)
+  const [reservaDias, setReservaDias] = useState(3)
 
   // CMV
   const [editandoPreco, setEditandoPreco] = useState<string | null>(null)
@@ -159,18 +168,54 @@ export default function PousadaPage() {
     }
   }
 
+  // Reservas CRUD
+  function salvarReservaItem() {
+    if (!pousada || (reservaH + reservaM + reservaC) === 0 || reservaDias < 1) return
+    const nova: Reserva = {
+      id: Date.now().toString(),
+      nome: reservaNome.trim(),
+      homens: reservaH, mulheres: reservaM, criancas: reservaC,
+      dias: reservaDias,
+    }
+    salvar({ ...pousada, reservas: [...(pousada.reservas ?? []), nova] })
+    setAddReserva(false); setReservaNome(''); setReservaH(2); setReservaM(0); setReservaC(0); setReservaDias(3)
+    setListaGerada(false)
+  }
+  function removerReserva(rid: string) {
+    if (!pousada) return
+    salvar({ ...pousada, reservas: (pousada.reservas ?? []).filter(r => r.id !== rid) })
+    setListaGerada(false)
+  }
+
   // Lista consolidada
   function calcularLista(): ItemLista[] {
-    if (!pousada || !hospedesLista) return []
-    const equiv = totalEquivalente(hospedesEfetivos())
+    if (!pousada) return []
     const agg: Record<string, { categoria: string; bruto: number }> = {}
-    for (const ref of pousada.cardapio) {
-      for (const ing of ref.ingredientes) {
-        const bruto = (ing.gramasPorcao / 1000) * ing.fc * equiv * diasLista
-        if (!agg[ing.nome]) agg[ing.nome] = { categoria: ing.categoria, bruto: 0 }
-        agg[ing.nome].bruto += bruto
+
+    if (modoPlano === 'reservas') {
+      const reservas = pousada.reservas ?? []
+      for (const res of reservas) {
+        const equiv = totalEquivalente({ homens: res.homens, mulheres: res.mulheres, criancas: res.criancas })
+        for (const ref of pousada.cardapio) {
+          for (const ing of ref.ingredientes) {
+            const bruto = (ing.gramasPorcao / 1000) * ing.fc * equiv * res.dias
+            if (!agg[ing.nome]) agg[ing.nome] = { categoria: ing.categoria, bruto: 0 }
+            agg[ing.nome].bruto += bruto
+          }
+        }
+      }
+    } else {
+      if (!hospedesLista) return []
+      const equiv = totalEquivalente(hospedesEfetivos())
+      for (const ref of pousada.cardapio) {
+        for (const ing of ref.ingredientes) {
+          const bruto = (ing.gramasPorcao / 1000) * ing.fc * equiv * diasLista
+          if (!agg[ing.nome]) agg[ing.nome] = { categoria: ing.categoria, bruto: 0 }
+          agg[ing.nome].bruto += bruto
+        }
       }
     }
+
     return Object.entries(agg).map(([nome, v]) => ({
       nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.bruto,
       compra: converterParaCompra(nome, v.bruto),
@@ -181,6 +226,11 @@ export default function PousadaPage() {
   const grupos = agruparPorSetor(itensList)
 
   function descOcupacao(): string {
+    if (modoPlano === 'reservas') {
+      const reservas = pousada?.reservas ?? []
+      const totalNoites = reservas.reduce((s, r) => s + r.dias, 0)
+      return `${reservas.length} reserva${reservas.length !== 1 ? 's' : ''} · ${totalNoites} noite${totalNoites !== 1 ? 's' : ''}`
+    }
     const hef = hospedesEfetivos()
     const total = hef.homens + hef.mulheres + hef.criancas
     if (modoOcupacao === 'quartos') return `${quartosOcupados} quarto${quartosOcupados > 1 ? 's' : ''} (≈${total} hóspedes)`
@@ -408,98 +458,220 @@ export default function PousadaPage() {
               </div>
             ) : (
               <>
-                <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-                  <p className="text-sm font-semibold mb-4" style={{ color: '#1A2E25' }}>Configurar compra</p>
-
-                  {/* Dias */}
-                  <div className="mb-5">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm" style={{ color: '#5A7A68' }}>Dias de planejamento</p>
-                      <span className="font-bold" style={{ color: '#128C7E' }}>{diasLista}</span>
-                    </div>
-                    <input type="range" min="1" max="30" value={diasLista}
-                      onChange={e => { setDiasLista(parseInt(e.target.value)); setListaGerada(false) }}
-                      className="w-full" style={{ accentColor: '#128C7E' }} />
-                    <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
-                      <span>1 dia</span><span>15</span><span>30 dias</span>
-                    </div>
+                {/* Modo de planejamento */}
+                <div className="bg-white rounded-3xl p-4" style={{ border: '1.5px solid #D4EDE0' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Modo de planejamento</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: 'estimativa', label: 'Estimativa geral', desc: 'média de ocupação' },
+                      { key: 'reservas', label: 'Por reservas', desc: 'reservas confirmadas' },
+                    ].map(m => (
+                      <button key={m.key} onClick={() => { setModoPlano(m.key as 'estimativa' | 'reservas'); setListaGerada(false) }}
+                        className="py-3 rounded-2xl text-center"
+                        style={modoPlano === m.key
+                          ? { background: '#128C7E', color: '#fff' }
+                          : { background: '#F0F7F2', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                        <p className="text-sm font-semibold">{m.label}</p>
+                        <p className="text-xs mt-0.5" style={{ color: modoPlano === m.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{m.desc}</p>
+                      </button>
+                    ))}
                   </div>
-
-                  {/* Modo de ocupação */}
-                  <div className="mb-4">
-                    <p className="text-xs font-medium mb-2" style={{ color: '#5A7A68' }}>Calcular por</p>
-                    <div className="flex gap-2">
-                      {[
-                        { key: 'hospedes', label: 'Hóspedes' },
-                        { key: 'quartos', label: 'Quartos ocupados' },
-                      ].map(m => (
-                        <button key={m.key} onClick={() => { setModoOcupacao(m.key as 'hospedes' | 'quartos'); setListaGerada(false) }}
-                          className="flex-1 py-2 rounded-xl text-sm font-medium"
-                          style={modoOcupacao === m.key
-                            ? { background: '#128C7E', color: '#fff' }
-                            : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Por quartos */}
-                  {modoOcupacao === 'quartos' && pousada && (
-                    <div className="mb-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm" style={{ color: '#5A7A68' }}>Quartos ocupados</p>
-                        <span className="font-bold" style={{ color: '#128C7E' }}>
-                          {quartosOcupados} / {pousada.totalQuartos}
-                        </span>
-                      </div>
-                      <input type="range" min="1" max={pousada.totalQuartos} value={quartosOcupados}
-                        onChange={e => { setQuartosOcupados(parseInt(e.target.value)); setListaGerada(false) }}
-                        className="w-full" style={{ accentColor: '#128C7E' }} />
-                      <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
-                        <span>1 quarto</span><span>{pousada.totalQuartos} quartos</span>
-                      </div>
-                      {(() => {
-                        const hef = hospedesEfetivos()
-                        const total = hef.homens + hef.mulheres + hef.criancas
-                        return total > 0 ? (
-                          <p className="text-xs mt-2 font-medium" style={{ color: '#128C7E' }}>
-                            ≈ {total} hóspede{total !== 1 ? 's' : ''} estimados ({hef.homens}H {hef.mulheres}M {hef.criancas}C)
-                          </p>
-                        ) : null
-                      })()}
-                    </div>
-                  )}
-
-                  {/* Por hóspedes */}
-                  {modoOcupacao === 'hospedes' && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium" style={{ color: '#5A7A68' }}>Hóspedes no período</p>
-                      {['homens', 'mulheres', 'criancas'].map(campo => (
-                        <div key={campo} className="flex items-center justify-between">
-                          <span className="text-sm capitalize" style={{ color: '#1A2E25' }}>
-                            {campo === 'homens' ? 'Homens' : campo === 'mulheres' ? 'Mulheres' : 'Crianças'}
-                          </span>
-                          <div className="flex items-center gap-3">
-                            <button onClick={() => { setHospedesLista(h => h ? { ...h, [campo]: Math.max(0, (h[campo as keyof typeof h] as number) - 1) } : h); setListaGerada(false) }}
-                              className="w-8 h-8 rounded-full" style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
-                            <span className="w-5 text-center font-semibold" style={{ color: '#1A2E25' }}>
-                              {hospedesLista[campo as keyof typeof hospedesLista]}
-                            </span>
-                            <button onClick={() => { setHospedesLista(h => h ? { ...h, [campo]: (h[campo as keyof typeof h] as number) + 1 } : h); setListaGerada(false) }}
-                              className="w-8 h-8 rounded-full" style={{ background: '#128C7E', color: '#fff' }}>+</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                <button onClick={() => setListaGerada(true)}
-                  className="w-full py-4 rounded-2xl font-semibold text-sm"
-                  style={{ background: '#128C7E', color: '#fff' }}>
-                  Gerar lista consolidada ({diasLista} dias)
-                </button>
+                {/* Estimativa geral */}
+                {modoPlano === 'estimativa' && (
+                  <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                    <p className="text-sm font-semibold mb-4" style={{ color: '#1A2E25' }}>Configurar compra</p>
+
+                    <div className="mb-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm" style={{ color: '#5A7A68' }}>Dias de planejamento</p>
+                        <span className="font-bold" style={{ color: '#128C7E' }}>{diasLista}</span>
+                      </div>
+                      <input type="range" min="1" max="30" value={diasLista}
+                        onChange={e => { setDiasLista(parseInt(e.target.value)); setListaGerada(false) }}
+                        className="w-full" style={{ accentColor: '#128C7E' }} />
+                      <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+                        <span>1 dia</span><span>15</span><span>30 dias</span>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-xs font-medium mb-2" style={{ color: '#5A7A68' }}>Calcular por</p>
+                      <div className="flex gap-2">
+                        {[
+                          { key: 'hospedes', label: 'Hóspedes' },
+                          { key: 'quartos', label: 'Quartos ocupados' },
+                        ].map(m => (
+                          <button key={m.key} onClick={() => { setModoOcupacao(m.key as 'hospedes' | 'quartos'); setListaGerada(false) }}
+                            className="flex-1 py-2 rounded-xl text-sm font-medium"
+                            style={modoOcupacao === m.key
+                              ? { background: '#128C7E', color: '#fff' }
+                              : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {modoOcupacao === 'quartos' && (
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm" style={{ color: '#5A7A68' }}>Quartos ocupados</p>
+                          <span className="font-bold" style={{ color: '#128C7E' }}>
+                            {quartosOcupados} / {pousada.totalQuartos}
+                          </span>
+                        </div>
+                        <input type="range" min="1" max={pousada.totalQuartos} value={quartosOcupados}
+                          onChange={e => { setQuartosOcupados(parseInt(e.target.value)); setListaGerada(false) }}
+                          className="w-full" style={{ accentColor: '#128C7E' }} />
+                        <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+                          <span>1 quarto</span><span>{pousada.totalQuartos} quartos</span>
+                        </div>
+                        {(() => {
+                          const hef = hospedesEfetivos()
+                          const total = hef.homens + hef.mulheres + hef.criancas
+                          return total > 0 ? (
+                            <p className="text-xs mt-2 font-medium" style={{ color: '#128C7E' }}>
+                              ≈ {total} hóspede{total !== 1 ? 's' : ''} estimados ({hef.homens}H {hef.mulheres}M {hef.criancas}C)
+                            </p>
+                          ) : null
+                        })()}
+                      </div>
+                    )}
+
+                    {modoOcupacao === 'hospedes' && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium" style={{ color: '#5A7A68' }}>Hóspedes no período</p>
+                        {['homens', 'mulheres', 'criancas'].map(campo => (
+                          <div key={campo} className="flex items-center justify-between">
+                            <span className="text-sm capitalize" style={{ color: '#1A2E25' }}>
+                              {campo === 'homens' ? 'Homens' : campo === 'mulheres' ? 'Mulheres' : 'Crianças'}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => { setHospedesLista(h => h ? { ...h, [campo]: Math.max(0, (h[campo as keyof typeof h] as number) - 1) } : h); setListaGerada(false) }}
+                                className="w-8 h-8 rounded-full" style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
+                              <span className="w-5 text-center font-semibold" style={{ color: '#1A2E25' }}>
+                                {hospedesLista[campo as keyof typeof hospedesLista]}
+                              </span>
+                              <button onClick={() => { setHospedesLista(h => h ? { ...h, [campo]: (h[campo as keyof typeof h] as number) + 1 } : h); setListaGerada(false) }}
+                                className="w-8 h-8 rounded-full" style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Por reservas */}
+                {modoPlano === 'reservas' && (
+                  <>
+                    {(pousada.reservas ?? []).length === 0 && !addReserva && (
+                      <div className="text-center py-6">
+                        <p className="text-sm mb-1 font-semibold" style={{ color: '#1A2E25' }}>Nenhuma reserva adicionada</p>
+                        <p className="text-xs mb-4" style={{ color: '#5A7A68' }}>Adicione as reservas confirmadas para calcular com precisão</p>
+                      </div>
+                    )}
+
+                    {(pousada.reservas ?? []).map(res => {
+                      const total = res.homens + res.mulheres + res.criancas
+                      const partes = [res.homens > 0 ? `${res.homens}H` : '', res.mulheres > 0 ? `${res.mulheres}M` : '', res.criancas > 0 ? `${res.criancas}C` : ''].filter(Boolean).join(' ')
+                      return (
+                        <div key={res.id} className="bg-white rounded-3xl px-5 py-4 flex items-center justify-between" style={{ border: '1.5px solid #D4EDE0' }}>
+                          <div>
+                            <p className="font-semibold text-sm" style={{ color: '#1A2E25' }}>
+                              {res.nome || `${total} hóspede${total !== 1 ? 's' : ''}`}
+                            </p>
+                            <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>
+                              {partes} · {res.dias} noite{res.dias !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <button onClick={() => removerReserva(res.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
+                        </div>
+                      )
+                    })}
+
+                    {addReserva ? (
+                      <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
+                        <p className="font-semibold mb-4 text-sm" style={{ color: '#1A2E25' }}>Nova reserva</p>
+
+                        <input value={reservaNome} onChange={e => setReservaNome(e.target.value)}
+                          placeholder="Nome (opcional, ex: Família Silva)"
+                          className="w-full px-4 py-3 rounded-2xl text-sm outline-none mb-4"
+                          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+
+                        <div className="space-y-3 mb-4">
+                          {[
+                            { label: 'Homens', val: reservaH, set: setReservaH },
+                            { label: 'Mulheres', val: reservaM, set: setReservaM },
+                            { label: 'Crianças', val: reservaC, set: setReservaC },
+                          ].map(({ label, val, set }) => (
+                            <div key={label} className="flex items-center justify-between">
+                              <span className="text-sm" style={{ color: '#1A2E25' }}>{label}</span>
+                              <div className="flex items-center gap-3">
+                                <button onClick={() => set(v => Math.max(0, v - 1))}
+                                  className="w-8 h-8 rounded-full" style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
+                                <span className="w-5 text-center font-semibold" style={{ color: '#1A2E25' }}>{val}</span>
+                                <button onClick={() => set(v => v + 1)}
+                                  className="w-8 h-8 rounded-full" style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm" style={{ color: '#5A7A68' }}>Noites de estadia</p>
+                            <span className="font-bold" style={{ color: '#128C7E' }}>{reservaDias}</span>
+                          </div>
+                          <input type="range" min="1" max="30" value={reservaDias}
+                            onChange={e => setReservaDias(parseInt(e.target.value))}
+                            className="w-full" style={{ accentColor: '#128C7E' }} />
+                          <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+                            <span>1 noite</span><span>15</span><span>30</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button onClick={() => { setAddReserva(false); setReservaNome(''); setReservaH(2); setReservaM(0); setReservaC(0); setReservaDias(3) }}
+                            className="flex-1 py-3 rounded-2xl text-sm font-medium"
+                            style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>Cancelar</button>
+                          <button onClick={salvarReservaItem}
+                            disabled={(reservaH + reservaM + reservaC) === 0}
+                            className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
+                            style={{ background: '#128C7E', color: '#fff' }}>Salvar reserva</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => setAddReserva(true)}
+                        className="w-full py-4 rounded-3xl text-sm font-semibold"
+                        style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
+                        + Adicionar reserva
+                      </button>
+                    )}
+
+                    {(pousada.reservas ?? []).length > 0 && !addReserva && (
+                      <div className="px-2 py-1">
+                        <p className="text-xs text-center" style={{ color: '#7BA892' }}>
+                          {(pousada.reservas ?? []).length} reserva{(pousada.reservas ?? []).length !== 1 ? 's' : ''} · {(pousada.reservas ?? []).reduce((s, r) => s + r.dias, 0)} noites totais
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!addReserva && (
+                  <button
+                    onClick={() => setListaGerada(true)}
+                    disabled={modoPlano === 'reservas' && (pousada.reservas ?? []).length === 0}
+                    className="w-full py-4 rounded-2xl font-semibold text-sm disabled:opacity-40"
+                    style={{ background: '#128C7E', color: '#fff' }}>
+                    {modoPlano === 'estimativa'
+                      ? `Gerar lista consolidada (${diasLista} dias)`
+                      : `Gerar lista por reservas (${(pousada.reservas ?? []).length} reserva${(pousada.reservas ?? []).length !== 1 ? 's' : ''})`}
+                  </button>
+                )}
 
                 {listaGerada && grupos.length > 0 && (
                   <>

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
-import { baixarPDF } from '@/lib/exportar-pdf'
+import { baixarPDF, type SecaoPDF } from '@/lib/exportar-pdf'
 import { converterParaCompra } from '@/lib/unidades-compra'
 
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
@@ -23,7 +23,7 @@ const DURACAO_LABELS: Record<string, string> = { coquetel: 'Coquetel', tarde: 'T
 export default function ListaReceitaPage() {
   const { id } = useParams<{ id: string }>()
   const [evento, setEvento] = useState<Evento | null>(null)
-  const [gerando, setGerando] = useState(false)
+  const [gerando, setGerando] = useState<'consolidado' | 'porrefeicao' | null>(null)
   const [overrides, setOverrides] = useState<Record<string, number>>({})
   const [editando, setEditando] = useState<string | null>(null)
   const [editInput, setEditInput] = useState('')
@@ -81,16 +81,38 @@ export default function ListaReceitaPage() {
     setEditando(null)
   }
 
-  async function exportarPDF() {
-    setGerando(true)
-    await baixarPDF({
-      nomeEvento: evento!.nome,
-      data: dataFormatada,
-      totalPessoas: `${evento!.totalPessoas} pessoas`,
-      cenario: descPerfil,
-      grupos,
+  function calcularPorRefeicao(): SecaoPDF[] {
+    return evento!.refeicoes.map(ref => {
+      const map: Record<string, { categoria: string; bruto: number }> = {}
+      for (const ing of ref.ingredientes) {
+        const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
+        if (!map[ing.nome]) map[ing.nome] = { categoria: ing.categoria, bruto: 0 }
+        map[ing.nome].bruto += bruto
+      }
+      const itens: ItemLista[] = Object.entries(map).map(([nome, v]) => ({
+        nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.bruto,
+        compra: converterParaCompra(nome, v.bruto),
+      }))
+      return { titulo: ref.nome, grupos: agruparPorSetor(itens) }
     })
-    setGerando(false)
+  }
+
+  async function exportarPDF(modo: 'consolidado' | 'porrefeicao') {
+    setGerando(modo)
+    if (modo === 'porrefeicao') {
+      await baixarPDF({
+        nomeEvento: evento!.nome, data: dataFormatada,
+        totalPessoas: `${evento!.totalPessoas} pessoas`,
+        cenario: descPerfil, grupos, modo: 'por_secao', secoes: calcularPorRefeicao(),
+      })
+    } else {
+      await baixarPDF({
+        nomeEvento: evento!.nome, data: dataFormatada,
+        totalPessoas: `${evento!.totalPessoas} pessoas`,
+        cenario: descPerfil, grupos,
+      })
+    }
+    setGerando(null)
   }
 
   function enviarWhatsApp() {
@@ -115,7 +137,7 @@ export default function ListaReceitaPage() {
               style={{ background: '#25D366', color: '#fff' }}>
               WhatsApp
             </button>
-            <button onClick={exportarPDF} disabled={gerando}
+            <button onClick={() => exportarPDF('consolidado')} disabled={gerando !== null}
               className="px-3 py-2 rounded-2xl text-sm font-semibold disabled:opacity-60"
               style={{ background: '#128C7E', color: '#fff' }}>
               {gerando ? 'Gerando...' : 'PDF'}
@@ -228,17 +250,24 @@ export default function ListaReceitaPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2 pb-4">
+          <div className="space-y-2 pt-2 pb-4">
             <button onClick={enviarWhatsApp}
-              className="py-4 rounded-2xl font-semibold text-sm"
+              className="w-full py-4 rounded-2xl font-semibold text-sm"
               style={{ background: '#25D366', color: '#fff' }}>
               Enviar WhatsApp
             </button>
-            <button onClick={exportarPDF} disabled={gerando}
-              className="py-4 rounded-2xl font-semibold text-sm disabled:opacity-60"
-              style={{ background: '#128C7E', color: '#fff' }}>
-              {gerando ? 'Gerando...' : 'Baixar PDF'}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => exportarPDF('consolidado')} disabled={gerando !== null}
+                className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
+                style={{ background: '#128C7E', color: '#fff' }}>
+                {gerando === 'consolidado' ? 'Gerando...' : 'PDF Consolidado'}
+              </button>
+              <button onClick={() => exportarPDF('porrefeicao')} disabled={gerando !== null}
+                className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
+                style={{ background: '#fff', color: '#128C7E', border: '1.5px solid #128C7E' }}>
+                {gerando === 'porrefeicao' ? 'Gerando...' : 'PDF Por Refeição'}
+              </button>
+            </div>
           </div>
         </div>
       )}

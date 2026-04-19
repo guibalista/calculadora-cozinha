@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
 import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
-import { baixarPDF } from '@/lib/exportar-pdf'
+import { baixarPDF, type SecaoPDF } from '@/lib/exportar-pdf'
 import { converterParaCompra } from '@/lib/unidades-compra'
 
 interface Ingrediente { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
@@ -15,12 +15,11 @@ interface Estadia { id: string; nome: string; homens: number; mulheres: number; 
 type Cenario = 'moderado' | 'conservador' | 'agressivo'
 const FATORES: Record<Cenario, number> = { moderado: 0.85, conservador: 1.00, agressivo: 1.25 }
 
-
 export default function ListaComprasPage() {
   const { id } = useParams<{ id: string }>()
   const [estadia, setEstadia] = useState<Estadia | null>(null)
   const [cenario, setCenario] = useState<Cenario>('conservador')
-  const [gerando, setGerando] = useState(false)
+  const [gerando, setGerando] = useState<'consolidado' | 'pordia' | null>(null)
   const [overrides, setOverrides] = useState<Record<string, number>>({})
   const [editando, setEditando] = useState<string | null>(null)
   const [editInput, setEditInput] = useState('')
@@ -30,7 +29,6 @@ export default function ListaComprasPage() {
     setEstadia(estadias.find((e: Estadia) => e.id === id) ?? null)
   }, [id])
 
-  // Resetar overrides ao trocar cenário
   useEffect(() => { setOverrides({}) }, [cenario])
 
   if (!estadia) return (
@@ -41,6 +39,7 @@ export default function ListaComprasPage() {
 
   const fator = FATORES[cenario]
 
+  // Lista consolidada
   const totaisMap: Record<string, { categoria: string; liquido: number; bruto: number }> = {}
   for (const dia of estadia.dias) {
     const hospedes = somarHospedes(
@@ -80,9 +79,34 @@ export default function ListaComprasPage() {
 
   const nomeCenario = cenario === 'moderado' ? 'Moderado (-15%)' : cenario === 'conservador' ? 'Conservador (padrao)' : 'Agressivo (+25%)'
 
+  // Lista por dia (para PDF separado)
+  function calcularPorDia(): SecaoPDF[] {
+    return estadia!.dias
+      .filter(d => d.pratos.length > 0)
+      .map(dia => {
+        const hospedes = somarHospedes(
+          { homens: estadia!.homens, mulheres: estadia!.mulheres, criancas: estadia!.criancas },
+          { homens: dia.extrasHomens, mulheres: dia.extrasMulheres, criancas: dia.extrasCriancas }
+        )
+        const equiv = totalEquivalente(hospedes) * fator
+        const map: Record<string, { categoria: string; bruto: number }> = {}
+        for (const prato of dia.pratos) {
+          for (const ing of prato.ingredientes) {
+            const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
+            if (!map[ing.nome]) map[ing.nome] = { categoria: ing.categoria, bruto: 0 }
+            map[ing.nome].bruto += bruto
+          }
+        }
+        const itens: ItemLista[] = Object.entries(map).map(([nome, v]) => ({
+          nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.bruto,
+          compra: converterParaCompra(nome, v.bruto),
+        }))
+        return { titulo: dia.label, grupos: agruparPorSetor(itens) }
+      })
+  }
+
   function iniciarEdit(nome: string, brutoKg: number) {
-    setEditando(nome)
-    setEditInput(String(Math.round(brutoKg * 1000)))
+    setEditando(nome); setEditInput(String(Math.round(brutoKg * 1000)))
   }
   function confirmarEdit() {
     if (!editando) return
@@ -91,25 +115,28 @@ export default function ListaComprasPage() {
     setEditando(null)
   }
 
-  async function exportarPDF() {
-    setGerando(true)
-    await baixarPDF({
-      nomeEvento: estadia!.nome,
-      data: periodo,
-      totalPessoas: `${totalPessoas} pessoas (${descPessoas})`,
-      cenario: nomeCenario,
-      grupos,
-    })
-    setGerando(false)
+  async function exportarPDF(modo: 'consolidado' | 'pordia') {
+    setGerando(modo)
+    if (modo === 'pordia') {
+      await baixarPDF({
+        nomeEvento: estadia!.nome, data: periodo,
+        totalPessoas: `${totalPessoas} pessoas (${descPessoas})`,
+        cenario: nomeCenario, grupos, modo: 'por_secao', secoes: calcularPorDia(),
+      })
+    } else {
+      await baixarPDF({
+        nomeEvento: estadia!.nome, data: periodo,
+        totalPessoas: `${totalPessoas} pessoas (${descPessoas})`,
+        cenario: nomeCenario, grupos,
+      })
+    }
+    setGerando(null)
   }
 
   function enviarWhatsApp() {
     const texto = gerarTextoWhatsApp({
-      nomeEvento: estadia!.nome,
-      data: periodo,
-      totalPessoas: `${totalPessoas} pessoas`,
-      cenario: nomeCenario,
-      grupos,
+      nomeEvento: estadia!.nome, data: periodo,
+      totalPessoas: `${totalPessoas} pessoas`, cenario: nomeCenario, grupos,
     })
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
   }
@@ -123,20 +150,13 @@ export default function ListaComprasPage() {
   return (
     <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F0F7F2' }}>
       <div className="flex items-center justify-between mb-6">
-        <Link href={`/estadia/${id}`} className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <Link href={`/estadia/${id}`} className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
         {totalItens > 0 && (
-          <div className="flex gap-2">
-            <button onClick={enviarWhatsApp}
-              className="px-3 py-2 rounded-2xl text-sm font-semibold"
-              style={{ background: '#25D366', color: '#fff' }}>
-              WhatsApp
-            </button>
-            <button onClick={exportarPDF} disabled={gerando}
-              className="px-3 py-2 rounded-2xl text-sm font-semibold disabled:opacity-60"
-              style={{ background: '#128C7E', color: '#fff' }}>
-              {gerando ? 'Gerando...' : 'Baixar PDF'}
-            </button>
-          </div>
+          <button onClick={enviarWhatsApp}
+            className="px-3 py-2 rounded-2xl text-sm font-semibold"
+            style={{ background: '#25D366', color: '#fff' }}>
+            WhatsApp
+          </button>
         )}
       </div>
 
@@ -195,8 +215,7 @@ export default function ListaComprasPage() {
                   <div className="text-right ml-4">
                     {editando === item.nome ? (
                       <div className="flex items-center gap-1 justify-end">
-                        <input
-                          type="number" value={editInput}
+                        <input type="number" value={editInput}
                           onChange={e => setEditInput(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
                           autoFocus
@@ -212,13 +231,9 @@ export default function ListaComprasPage() {
                           style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
                           {item.compra}
                         </p>
-                        <button
-                          onClick={() => iniciarEdit(item.nome, item.brutoKg)}
+                        <button onClick={() => iniciarEdit(item.nome, item.brutoKg)}
                           className="text-base opacity-40 hover:opacity-80 transition-opacity"
-                          style={{ color: '#7BA892', lineHeight: 1 }}
-                          title="Ajustar">
-                          ✎
-                        </button>
+                          style={{ color: '#7BA892', lineHeight: 1 }}>✎</button>
                       </div>
                     )}
                   </div>
@@ -256,18 +271,25 @@ export default function ListaComprasPage() {
             </div>
           </div>
 
-          {/* Botões rodapé */}
-          <div className="grid grid-cols-2 gap-3 pt-2 pb-4">
+          {/* Exportar */}
+          <div className="space-y-2 pt-2 pb-4">
             <button onClick={enviarWhatsApp}
-              className="py-4 rounded-2xl font-semibold text-sm"
+              className="w-full py-4 rounded-2xl font-semibold text-sm"
               style={{ background: '#25D366', color: '#fff' }}>
               Enviar WhatsApp
             </button>
-            <button onClick={exportarPDF} disabled={gerando}
-              className="py-4 rounded-2xl font-semibold text-sm disabled:opacity-60"
-              style={{ background: '#128C7E', color: '#fff' }}>
-              {gerando ? 'Gerando...' : 'Baixar PDF'}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => exportarPDF('consolidado')} disabled={gerando !== null}
+                className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
+                style={{ background: '#128C7E', color: '#fff' }}>
+                {gerando === 'consolidado' ? 'Gerando...' : 'PDF Consolidado'}
+              </button>
+              <button onClick={() => exportarPDF('pordia')} disabled={gerando !== null}
+                className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
+                style={{ background: '#fff', color: '#128C7E', border: '1.5px solid #128C7E' }}>
+                {gerando === 'pordia' ? 'Gerando...' : 'PDF Por Dia'}
+              </button>
+            </div>
           </div>
         </div>
       )}

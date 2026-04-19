@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [estadias, setEstadias] = useState<Estadia[]>([])
   const [eventos, setEventos] = useState<Evento[]>([])
   const [pousadas, setPousadas] = useState<Pousada[]>([])
+  const [aberto, setAberto] = useState(false)
 
   useEffect(() => {
     setEstadias(JSON.parse(localStorage.getItem('estadias') || '[]'))
@@ -29,7 +30,7 @@ export default function DashboardPage() {
     setPousadas(JSON.parse(localStorage.getItem('pousadas') || '[]'))
   }, [])
 
-  const temHistorico = estadias.length > 0 || eventos.length > 0 || pousadas.length > 0
+  const total = estadias.length + eventos.length + pousadas.length
 
   return (
     <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
@@ -39,7 +40,8 @@ export default function DashboardPage() {
         <p className="text-sm mt-0.5" style={{ color: '#7BA892' }}>Assertividade nas compras</p>
       </header>
 
-      {/* Módulos */}
+      {/* Módulos — ação principal */}
+      <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Novo planejamento</p>
       <div className="space-y-3 mb-8">
         {MODULOS.map(m => (
           <Link key={m.href} href={m.href}
@@ -58,85 +60,108 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Histórico */}
-      {!temHistorico && (
+      {/* Histórico — claramente separado */}
+      {total > 0 && (
+        <div>
+          <button
+            onClick={() => setAberto(v => !v)}
+            className="w-full flex items-center justify-between px-5 py-4 rounded-3xl"
+            style={{ background: aberto ? '#E8F5EE' : '#fff', border: '1.5px solid #D4EDE0' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
+                style={{ background: aberto ? '#128C7E' : '#F0F7F2' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 4h12M2 8h8M2 12h5" stroke={aberto ? '#fff' : '#7BA892'} strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>Meus planejamentos</p>
+                <p className="text-xs" style={{ color: '#7BA892' }}>{total} salvo{total !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <span className="text-sm font-medium transition-transform"
+              style={{ color: '#128C7E', transform: aberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>→</span>
+          </button>
+
+          {aberto && (
+            <div className="mt-3 rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0', background: '#fff' }}>
+
+              {estadias.length > 0 && (
+                <>
+                  <div className="px-5 py-2.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#7BA892' }}>Casas de Aluguel</p>
+                  </div>
+                  {estadias.map((e, i) => {
+                    const total = e.homens + e.mulheres + e.criancas
+                    const partes = [e.homens > 0 ? `${e.homens}H` : '', e.mulheres > 0 ? `${e.mulheres}M` : '', e.criancas > 0 ? `${e.criancas}C` : ''].filter(Boolean).join(' ')
+                    return (
+                      <Link key={e.id} href={`/estadia/${e.id}`}
+                        className="flex items-center justify-between px-5 py-3.5"
+                        style={{ borderBottom: i < estadias.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>{e.nome}</p>
+                          <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{total} hóspedes · {partes} · {e.numeroDias} dias</p>
+                        </div>
+                        <span className="text-xs" style={{ color: '#C8E4D4' }}>→</span>
+                      </Link>
+                    )
+                  })}
+                </>
+              )}
+
+              {eventos.length > 0 && (
+                <>
+                  <div className="px-5 py-2.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA', borderTop: estadias.length > 0 ? '1px solid #E4F2EA' : 'none' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#7BA892' }}>Eventos</p>
+                  </div>
+                  {eventos.map((e, i) => (
+                    <Link key={e.id} href={`/receita/${e.id}`}
+                      className="flex items-center justify-between px-5 py-3.5"
+                      style={{ borderBottom: i < eventos.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>{e.nome}</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>
+                          {e.tipoEvento ? TIPO_LABELS[e.tipoEvento] || e.tipoEvento : 'Evento'} · {e.totalPessoas} pessoas
+                          {e.data && ` · ${new Date(e.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}
+                        </p>
+                      </div>
+                      <span className="text-xs" style={{ color: '#C8E4D4' }}>→</span>
+                    </Link>
+                  ))}
+                </>
+              )}
+
+              {pousadas.length > 0 && (
+                <>
+                  <div className="px-5 py-2.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA', borderTop: (estadias.length > 0 || eventos.length > 0) ? '1px solid #E4F2EA' : 'none' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#7BA892' }}>Pousadas</p>
+                  </div>
+                  {pousadas.map((p, i) => (
+                    <Link key={p.id} href={`/pousada/${p.id}`}
+                      className="flex items-center justify-between px-5 py-3.5"
+                      style={{ borderBottom: i < pousadas.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>{p.nome}</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{p.totalQuartos} quarto{p.totalQuartos !== 1 ? 's' : ''}</p>
+                      </div>
+                      <span className="text-xs" style={{ color: '#C8E4D4' }}>→</span>
+                    </Link>
+                  ))}
+                </>
+              )}
+
+            </div>
+          )}
+        </div>
+      )}
+
+      {total === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="font-semibold mb-1" style={{ color: '#1A2E25' }}>Nenhum planejamento ainda</p>
           <p className="text-sm" style={{ color: '#5A7A68' }}>Escolha um módulo acima para começar</p>
         </div>
       )}
 
-      {estadias.length > 0 && (
-        <>
-          <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#7BA892' }}>Casas de Aluguel</h2>
-          <div className="space-y-3 mb-6">
-            {estadias.map(e => {
-              const total = e.homens + e.mulheres + e.criancas
-              return (
-                <Link key={e.id} href={`/estadia/${e.id}`}
-                  className="flex items-center justify-between p-5 rounded-3xl bg-white"
-                  style={{ border: '1.5px solid #D4EDE0' }}>
-                  <div>
-                    <p className="font-semibold text-base mb-1" style={{ color: '#1A2E25' }}>{e.nome}</p>
-                    <p className="text-sm" style={{ color: '#5A7A68' }}>
-                      {total} hóspede{total !== 1 ? 's' : ''}
-                      {e.homens > 0 && ` · ${e.homens}H`}
-                      {e.mulheres > 0 && ` ${e.mulheres}M`}
-                      {e.criancas > 0 && ` ${e.criancas}C`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium" style={{ color: '#7BA892' }}>{e.numeroDias} dia{e.numeroDias !== 1 ? 's' : ''}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#C8E4D4' }}>→</p>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      {eventos.length > 0 && (
-        <>
-          <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#7BA892' }}>Eventos</h2>
-          <div className="space-y-3 mb-6">
-            {eventos.map(e => (
-              <Link key={e.id} href={`/receita/${e.id}`}
-                className="flex items-center justify-between p-5 rounded-3xl bg-white"
-                style={{ border: '1.5px solid #D4EDE0' }}>
-                <div>
-                  <p className="font-semibold text-base mb-1" style={{ color: '#1A2E25' }}>{e.nome}</p>
-                  <p className="text-sm" style={{ color: '#5A7A68' }}>
-                    {e.tipoEvento ? TIPO_LABELS[e.tipoEvento] || e.tipoEvento : 'Evento'}
-                    {' · '}{e.totalPessoas} pessoa{e.totalPessoas !== 1 ? 's' : ''}
-                    {e.data && ` · ${new Date(e.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}
-                  </p>
-                </div>
-                <p className="text-xs" style={{ color: '#C8E4D4' }}>→</p>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
-
-      {pousadas.length > 0 && (
-        <>
-          <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#7BA892' }}>Pousadas</h2>
-          <div className="space-y-3 mb-6">
-            {pousadas.map(p => (
-              <Link key={p.id} href={`/pousada/${p.id}`}
-                className="flex items-center justify-between p-5 rounded-3xl bg-white"
-                style={{ border: '1.5px solid #D4EDE0' }}>
-                <div>
-                  <p className="font-semibold text-base mb-1" style={{ color: '#1A2E25' }}>{p.nome}</p>
-                  <p className="text-sm" style={{ color: '#5A7A68' }}>{p.totalQuartos} quarto{p.totalQuartos !== 1 ? 's' : ''}</p>
-                </div>
-                <p className="text-xs" style={{ color: '#C8E4D4' }}>→</p>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
     </main>
   )
 }
