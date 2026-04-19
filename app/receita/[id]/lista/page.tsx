@@ -2,23 +2,27 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { totalEquivalente } from '@/lib/percapita'
 import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
 import { baixarPDF } from '@/lib/exportar-pdf'
 import { converterParaCompra } from '@/lib/unidades-compra'
 
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
 interface Refeicao { id: string; nome: string; ingredientes: IngPrato[] }
-interface Evento { id: string; nome: string; data?: string; homens: number; mulheres: number; criancas: number; totalPessoas: number; refeicoes: Refeicao[] }
+interface Evento {
+  id: string; nome: string; data?: string; totalPessoas: number
+  duracao?: string; perfilConsumo?: string
+  homens?: number; mulheres?: number; criancas?: number
+  refeicoes: Refeicao[]
+}
 
-type Cenario = 'moderado' | 'conservador' | 'agressivo'
-const FATORES: Record<Cenario, number> = { moderado: 0.85, conservador: 1.00, agressivo: 1.25 }
-
+const FATORES_PERFIL: Record<string, number> = { leve: 0.80, moderado: 1.00, intenso: 1.30 }
+const FATORES_DURACAO: Record<string, number> = { coquetel: 0.65, tarde: 1.00, noite: 1.15, dia: 1.45 }
+const PERFIL_LABELS: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', intenso: 'Intenso' }
+const DURACAO_LABELS: Record<string, string> = { coquetel: 'Coquetel', tarde: 'Tarde', noite: 'Noite', dia: 'Dia inteiro' }
 
 export default function ListaReceitaPage() {
   const { id } = useParams<{ id: string }>()
   const [evento, setEvento] = useState<Evento | null>(null)
-  const [cenario, setCenario] = useState<Cenario>('conservador')
   const [gerando, setGerando] = useState(false)
   const [overrides, setOverrides] = useState<Record<string, number>>({})
   const [editando, setEditando] = useState<string | null>(null)
@@ -29,21 +33,20 @@ export default function ListaReceitaPage() {
     setEvento(eventos.find((e: Evento) => e.id === id) ?? null)
   }, [id])
 
-  useEffect(() => { setOverrides({}) }, [cenario])
-
   if (!evento) return (
     <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
       <p style={{ color: '#5A7A68' }}>Carregando...</p>
     </div>
   )
 
-  const fator = FATORES[cenario]
-  const equiv = totalEquivalente({ homens: evento.homens, mulheres: evento.mulheres, criancas: evento.criancas })
+  const fatorPerfil = FATORES_PERFIL[evento.perfilConsumo || 'moderado'] ?? 1.0
+  const fatorDuracao = FATORES_DURACAO[evento.duracao || 'tarde'] ?? 1.0
+  const equiv = evento.totalPessoas * fatorPerfil * fatorDuracao
 
   const totais: Record<string, { categoria: string; liquido: number; bruto: number }> = {}
   for (const ref of evento.refeicoes) {
     for (const ing of ref.ingredientes) {
-      const liquido = (ing.gramasPorPessoa / 1000) * equiv * fator
+      const liquido = (ing.gramasPorPessoa / 1000) * equiv
       const bruto = liquido * ing.fc
       if (!totais[ing.nome]) totais[ing.nome] = { categoria: ing.categoria, liquido: 0, bruto: 0 }
       totais[ing.nome].liquido += liquido
@@ -58,17 +61,14 @@ export default function ListaReceitaPage() {
   const grupos = agruparPorSetor(itensList)
   const totalItens = itensList.length
 
-  const descPessoas = [
-    evento.homens > 0 ? `${evento.homens} homem${evento.homens > 1 ? 'ns' : ''}` : '',
-    evento.mulheres > 0 ? `${evento.mulheres} mulher${evento.mulheres > 1 ? 'es' : ''}` : '',
-    evento.criancas > 0 ? `${evento.criancas} criança${evento.criancas > 1 ? 's' : ''}` : '',
-  ].filter(Boolean).join(', ')
-
   const dataFormatada = evento.data
     ? new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : undefined
 
-  const nomeCenario = cenario === 'moderado' ? 'Moderado (-15%)' : cenario === 'conservador' ? 'Conservador (padrao)' : 'Agressivo (+25%)'
+  const descPerfil = [
+    evento.perfilConsumo ? PERFIL_LABELS[evento.perfilConsumo] : 'Moderado',
+    evento.duracao ? DURACAO_LABELS[evento.duracao] : 'Tarde',
+  ].join(' · ')
 
   function iniciarEdit(nome: string, brutoKg: number) {
     setEditando(nome)
@@ -86,8 +86,8 @@ export default function ListaReceitaPage() {
     await baixarPDF({
       nomeEvento: evento!.nome,
       data: dataFormatada,
-      totalPessoas: `${evento!.totalPessoas} pessoas (${descPessoas})`,
-      cenario: nomeCenario,
+      totalPessoas: `${evento!.totalPessoas} pessoas`,
+      cenario: descPerfil,
       grupos,
     })
     setGerando(false)
@@ -98,22 +98,16 @@ export default function ListaReceitaPage() {
       nomeEvento: evento!.nome,
       data: dataFormatada,
       totalPessoas: `${evento!.totalPessoas} pessoas`,
-      cenario: nomeCenario,
+      cenario: descPerfil,
       grupos,
     })
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank')
   }
 
-  const cenarios: { key: Cenario; label: string; desc: string }[] = [
-    { key: 'moderado', label: 'Moderado', desc: '−15%' },
-    { key: 'conservador', label: 'Conservador', desc: 'padrão' },
-    { key: 'agressivo', label: 'Agressivo', desc: '+25%' },
-  ]
-
   return (
     <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F0F7F2' }}>
       <div className="flex items-center justify-between mb-6">
-        <Link href={`/receita/${id}`} className="text-sm font-medium underline" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <Link href={`/receita/${id}`} className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
         {totalItens > 0 && (
           <div className="flex gap-2">
             <button onClick={enviarWhatsApp}
@@ -124,14 +118,14 @@ export default function ListaReceitaPage() {
             <button onClick={exportarPDF} disabled={gerando}
               className="px-3 py-2 rounded-2xl text-sm font-semibold disabled:opacity-60"
               style={{ background: '#128C7E', color: '#fff' }}>
-              {gerando ? 'Gerando...' : 'Baixar PDF'}
+              {gerando ? 'Gerando...' : 'PDF'}
             </button>
           </div>
         )}
       </div>
 
       <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Lista de compras</h1>
-      <p className="text-sm mb-6" style={{ color: '#5A7A68' }}>
+      <p className="text-sm mb-2" style={{ color: '#5A7A68' }}>
         {evento.nome} · {evento.totalPessoas} pessoas · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
         {Object.keys(overrides).length > 0 && (
           <span className="ml-2 text-xs font-medium" style={{ color: '#128C7E' }}>
@@ -140,26 +134,20 @@ export default function ListaReceitaPage() {
         )}
       </p>
 
-      {/* Perfil de compra */}
-      <div className="bg-white rounded-3xl p-4 mb-6" style={{ border: '1.5px solid #D4EDE0' }}>
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Perfil de compra</p>
-        <div className="grid grid-cols-3 gap-2">
-          {cenarios.map(c => (
-            <button key={c.key} onClick={() => setCenario(c.key)}
-              className="py-3 rounded-2xl text-center"
-              style={cenario === c.key
-                ? { background: '#128C7E', color: '#fff' }
-                : { background: '#F0F7F2', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
-              <p className="text-sm font-semibold">{c.label}</p>
-              <p className="text-xs mt-0.5" style={{ color: cenario === c.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{c.desc}</p>
-            </button>
-          ))}
-        </div>
-        <p className="text-xs mt-3 text-center" style={{ color: '#7BA892' }}>
-          {cenario === 'moderado' && 'Apetite leve — ligeiramente abaixo do padrão'}
-          {cenario === 'conservador' && 'Quantidade padrão — calculada por pessoa'}
-          {cenario === 'agressivo' && 'Garantido sobrar — ideal para grupos com muito apetite'}
-        </p>
+      {/* Perfil aplicado */}
+      <div className="flex gap-2 mb-6 flex-wrap">
+        <span className="text-xs px-3 py-1.5 rounded-full font-medium"
+          style={{ background: '#E8F5EE', color: '#128C7E' }}>
+          {evento.perfilConsumo ? PERFIL_LABELS[evento.perfilConsumo] : 'Moderado'}
+        </span>
+        <span className="text-xs px-3 py-1.5 rounded-full font-medium"
+          style={{ background: '#E8F5EE', color: '#128C7E' }}>
+          {evento.duracao ? DURACAO_LABELS[evento.duracao] : 'Tarde'}
+        </span>
+        <span className="text-xs px-3 py-1.5 rounded-full font-medium"
+          style={{ background: '#F5FAF7', color: '#7BA892', border: '1px solid #D4EDE0' }}>
+          fator {(fatorPerfil * fatorDuracao).toFixed(2)}×
+        </span>
       </div>
 
       {totalItens === 0 ? (
@@ -203,9 +191,8 @@ export default function ListaReceitaPage() {
                         </p>
                         <button
                           onClick={() => iniciarEdit(item.nome, item.brutoKg)}
-                          className="text-base opacity-40 hover:opacity-80 transition-opacity"
-                          style={{ color: '#7BA892', lineHeight: 1 }}
-                          title="Ajustar">
+                          className="text-base opacity-40 hover:opacity-80"
+                          style={{ color: '#7BA892', lineHeight: 1 }}>
                           ✎
                         </button>
                       </div>
@@ -232,11 +219,11 @@ export default function ListaReceitaPage() {
               )}
               <div className="flex justify-between text-sm">
                 <span style={{ color: '#5A7A68' }}>Pessoas</span>
-                <span style={{ color: '#1A2E25' }}>{descPessoas}</span>
+                <span style={{ color: '#1A2E25' }}>{evento.totalPessoas}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Cenário</span>
-                <span className="font-medium" style={{ color: '#128C7E' }}>{nomeCenario}</span>
+                <span style={{ color: '#5A7A68' }}>Perfil</span>
+                <span className="font-medium" style={{ color: '#128C7E' }}>{descPerfil}</span>
               </div>
             </div>
           </div>

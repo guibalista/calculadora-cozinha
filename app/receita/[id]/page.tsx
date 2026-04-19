@@ -1,17 +1,22 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { buscarIngrediente, type Ingrediente } from '@/lib/ingredientes-db'
 import { buscarReceita, resolverReceita, type Receita } from '@/lib/receitas-db'
-import { totalEquivalente } from '@/lib/percapita'
 import { calcularCMV, statusCMV, formatarMoeda, type PrecoIngrediente } from '@/lib/cmv'
 
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; fcc: number; categoria: string }
-interface Refeicao { id: string; nome: string; ingredientes: IngPrato[] }
+interface Refeicao {
+  id: string; nome: string; categoria?: string
+  custoEstimado?: number; precoVenda?: number
+  ingredientes: IngPrato[]
+}
 interface Evento {
   id: string; nome: string; tipoEvento?: string; data?: string
-  homens: number; mulheres: number; criancas: number; totalPessoas: number
+  totalPessoas: number; duracao?: string; perfilConsumo?: string
+  // legacy compat
+  homens?: number; mulheres?: number; criancas?: number
   refeicoes: Refeicao[]
   precos: PrecoIngrediente[]
   precoVenda: number
@@ -22,8 +27,17 @@ type Aba = 'cardapio' | 'financeiro'
 const TIPO_LABELS: Record<string, string> = {
   churrasco: 'Churrasco', casamento: 'Casamento', formatura: 'Formatura',
   aniversario: 'Aniversário', corporativo: 'Corporativo',
-  almoco: 'Almoço', jantar: 'Jantar', brunch: 'Brunch', outro: 'Outro',
+  almoco: 'Almoço', jantar: 'Jantar', brunch: 'Brunch', outro: 'Evento',
 }
+
+const CAT_REFEICAO = [
+  { key: 'entrada', label: 'Entrada' },
+  { key: 'principal', label: 'Principal' },
+  { key: 'acompanhamento', label: 'Acompanhamento' },
+  { key: 'sobremesa', label: 'Sobremesa' },
+  { key: 'bebida', label: 'Bebida' },
+  { key: 'snack', label: 'Snack' },
+]
 
 function fmtKg(kg: number): string {
   if (kg < 0.001) return `${(kg * 1000000).toFixed(0)}mg`
@@ -53,7 +67,7 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
     <div className="space-y-2">
       <div className="relative">
         <input type="text" value={termo} onChange={e => buscar(e.target.value)}
-          placeholder="Adicionar ingrediente..."
+          placeholder="Buscar ingrediente..."
           className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
           style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
         {sugestoes.length > 0 && (
@@ -85,7 +99,7 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
               style={{ background: '#128C7E', color: '#fff' }}>+</button>
           </div>
           <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
-            Adicionar
+            Add
           </button>
         </div>
       )}
@@ -97,10 +111,14 @@ export default function ReceitaPage() {
   const { id } = useParams<{ id: string }>()
   const [evento, setEvento] = useState<Evento | null>(null)
   const [aba, setAba] = useState<Aba>('cardapio')
+  const formRef = useRef<HTMLDivElement>(null)
 
-  // Cardápio
+  // Form de nova refeição
   const [adicionando, setAdicionando] = useState(false)
   const [nomeRefeicao, setNomeRefeicao] = useState('')
+  const [catRefeicao, setCatRefeicao] = useState('principal')
+  const [custoForm, setCustoForm] = useState('')
+  const [precoForm, setPrecoForm] = useState('')
   const [ingredientes, setIngredientes] = useState<IngPrato[]>([])
   const [sugestoesReceita, setSugestoesReceita] = useState<Receita[]>([])
   const [receitaDaBase, setReceitaDaBase] = useState(false)
@@ -114,7 +132,7 @@ export default function ReceitaPage() {
   useEffect(() => {
     const eventos = JSON.parse(localStorage.getItem('eventos') || '[]')
     const found = eventos.find((e: Evento) => e.id === id)
-    if (found) setEvento({ precos: [], precoVenda: 0, ...found })
+    if (found) setEvento({ precos: [], precoVenda: 0, duracao: 'tarde', perfilConsumo: 'moderado', ...found })
   }, [id])
 
   function salvar(novo: Evento) {
@@ -122,6 +140,11 @@ export default function ReceitaPage() {
     const idx = eventos.findIndex((e: Evento) => e.id === id)
     if (idx >= 0) { eventos[idx] = novo; localStorage.setItem('eventos', JSON.stringify(eventos)) }
     setEvento(novo)
+  }
+
+  function abrirForm() {
+    setAdicionando(true)
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   function handleNome(v: string) {
@@ -138,12 +161,17 @@ export default function ReceitaPage() {
 
   function cancelar() {
     setAdicionando(false); setNomeRefeicao(''); setIngredientes([])
-    setReceitaDaBase(false); setSugestoesReceita([])
+    setCustoForm(''); setPrecoForm(''); setReceitaDaBase(false); setSugestoesReceita([])
   }
 
   function salvarRefeicao() {
     if (!nomeRefeicao || ingredientes.length === 0 || !evento) return
-    const nova: Refeicao = { id: Date.now().toString(), nome: nomeRefeicao, ingredientes }
+    const nova: Refeicao = {
+      id: Date.now().toString(), nome: nomeRefeicao, categoria: catRefeicao,
+      custoEstimado: parseFloat(custoForm) || undefined,
+      precoVenda: parseFloat(precoForm) || undefined,
+      ingredientes,
+    }
     salvar({ ...evento, refeicoes: [...evento.refeicoes, nova] })
     cancelar()
   }
@@ -158,14 +186,14 @@ export default function ReceitaPage() {
   }
 
   // Financeiro
-  function todosIngredientes(): string[] {
+  function todosIngredientes() {
     if (!evento) return []
     const set = new Set<string>()
     evento.refeicoes.forEach(r => r.ingredientes.forEach(i => set.add(i.nome)))
     return Array.from(set).sort()
   }
 
-  function getPreco(nome: string): number {
+  function getPreco(nome: string) {
     return evento?.precos?.find(p => p.nome === nome)?.precoKg ?? 0
   }
 
@@ -189,11 +217,15 @@ export default function ReceitaPage() {
     </div>
   )
 
-  const equiv = totalEquivalente({ homens: evento.homens, mulheres: evento.mulheres, criancas: evento.criancas })
+  // Cálculo financeiro
   const ingsUnicos = todosIngredientes()
   const precosFaltando = ingsUnicos.filter(n => getPreco(n) === 0).length
 
-  // Custo total do evento
+  const FATORES_PERFIL: Record<string, number> = { leve: 0.80, moderado: 1.00, intenso: 1.30 }
+  const FATORES_DURACAO: Record<string, number> = { coquetel: 0.65, tarde: 1.00, noite: 1.15, dia: 1.45 }
+  const fator = (FATORES_PERFIL[evento.perfilConsumo || 'moderado'] ?? 1) * (FATORES_DURACAO[evento.duracao || 'tarde'] ?? 1)
+  const equiv = evento.totalPessoas * fator
+
   let custoTotal = 0
   for (const ref of evento.refeicoes) {
     for (const ing of ref.ingredientes) {
@@ -204,14 +236,20 @@ export default function ReceitaPage() {
     }
   }
 
-  const custoPorConvidado = evento.totalPessoas > 0 ? custoTotal / evento.totalPessoas : 0
-  const lucro = (evento.precoVenda || 0) - custoTotal
-  const cmvEvento = evento.precoVenda > 0 ? calcularCMV(custoTotal, evento.precoVenda) : 0
-  const precoSugerido30 = custoTotal > 0 ? custoTotal / 0.30 : 0
+  // Usar custo manual por refeição como fallback se não tiver preços
+  const custoManuais = evento.refeicoes.reduce((sum, r) => sum + (r.custoEstimado || 0), 0)
+  const custoEfetivo = custoTotal > 0 ? custoTotal : custoManuais
+  const custoPorConvidado = evento.totalPessoas > 0 ? custoEfetivo / evento.totalPessoas : 0
+  const lucro = (evento.precoVenda || 0) - custoEfetivo
+  const cmvEvento = evento.precoVenda > 0 ? calcularCMV(custoEfetivo, evento.precoVenda) : 0
+  const precoSugerido30 = custoEfetivo > 0 ? custoEfetivo / 0.30 : 0
 
   const dataFormatada = evento.data
     ? new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : null
+
+  const DURACAO_LABELS: Record<string, string> = { coquetel: 'Coquetel', tarde: 'Tarde', noite: 'Noite', dia: 'Dia inteiro' }
+  const PERFIL_LABELS: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', intenso: 'Intenso' }
 
   return (
     <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
@@ -222,10 +260,12 @@ export default function ReceitaPage() {
           <div className="min-w-0">
             <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#1A2E25' }}>{evento.nome}</h1>
             <p className="text-sm mt-1" style={{ color: '#5A7A68' }}>
-              {evento.tipoEvento ? TIPO_LABELS[evento.tipoEvento] || evento.tipoEvento : 'Evento'}
-              {' · '}{evento.totalPessoas} convidado{evento.totalPessoas !== 1 ? 's' : ''}
-              {dataFormatada && ` · ${dataFormatada}`}
+              {evento.tipoEvento ? TIPO_LABELS[evento.tipoEvento] : 'Evento'}
+              {' · '}{evento.totalPessoas} pessoas
+              {evento.duracao && ` · ${DURACAO_LABELS[evento.duracao] || evento.duracao}`}
+              {evento.perfilConsumo && ` · ${PERFIL_LABELS[evento.perfilConsumo] || evento.perfilConsumo}`}
             </p>
+            {dataFormatada && <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{dataFormatada}</p>}
           </div>
           {cmvEvento > 0 && (
             <div className="flex-shrink-0 px-3 py-2 rounded-2xl text-center" style={statusCMV(cmvEvento)}>
@@ -254,124 +294,192 @@ export default function ReceitaPage() {
         {/* ── ABA CARDÁPIO ── */}
         {aba === 'cardapio' && (
           <>
-            <div className="flex items-center justify-between">
-              <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>
-                {evento.refeicoes.length > 0 ? `${evento.refeicoes.length} refeição${evento.refeicoes.length > 1 ? 'ões' : ''}` : 'Cardápio'}
-              </p>
-              {evento.refeicoes.length > 0 && !adicionando && (
-                <button onClick={() => setAdicionando(true)}
-                  className="text-sm font-semibold px-4 py-2 rounded-xl"
-                  style={{ background: '#128C7E', color: '#fff' }}>
-                  + Refeição
+            {/* FORM SEMPRE NO TOPO */}
+            <div ref={formRef}>
+              {adicionando ? (
+                <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
+                  <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição / prato</p>
+
+                  {/* Nome com autocomplete */}
+                  <div className="mb-3 relative">
+                    <input type="text" value={nomeRefeicao} onChange={e => handleNome(e.target.value)}
+                      placeholder="Nome (ex: Frango assado, Salada tropical...)"
+                      className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
+                      style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }}
+                      autoFocus />
+                    {sugestoesReceita.length > 0 && (
+                      <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
+                        style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+                        {sugestoesReceita.map(r => (
+                          <button key={r.id} onClick={() => selecionarReceita(r)}
+                            className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
+                            style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
+                            <span className="font-medium">{r.nome}</span>
+                            <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ing.</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Categoria */}
+                  <div className="mb-3">
+                    <p className="text-xs font-medium mb-2" style={{ color: '#5A7A68' }}>Categoria</p>
+                    <div className="flex flex-wrap gap-2">
+                      {CAT_REFEICAO.map(c => (
+                        <button key={c.key} onClick={() => setCatRefeicao(c.key)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-medium"
+                          style={catRefeicao === c.key
+                            ? { background: '#128C7E', color: '#fff' }
+                            : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custo + Preço de venda */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5" style={{ color: '#5A7A68' }}>Custo total (R$)</label>
+                      <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl"
+                        style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7' }}>
+                        <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
+                        <input type="number" value={custoForm} onChange={e => setCustoForm(e.target.value)}
+                          placeholder="0,00" step="0.01" min="0"
+                          className="flex-1 text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5" style={{ color: '#5A7A68' }}>Preço de venda (R$)</label>
+                      <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl"
+                        style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7' }}>
+                        <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
+                        <input type="number" value={precoForm} onChange={e => setPrecoForm(e.target.value)}
+                          placeholder="0,00" step="0.01" min="0"
+                          className="flex-1 text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ingredientes carregados */}
+                  {receitaDaBase && ingredientes.length > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-3" style={{ background: '#E8F5EE' }}>
+                      <span className="text-xs font-medium flex-1" style={{ color: '#1A2E25' }}>
+                        {ingredientes.length} ingredientes da base
+                      </span>
+                      <span className="text-xs" style={{ color: '#7BA892' }}>Ajuste se quiser</span>
+                    </div>
+                  )}
+
+                  {ingredientes.length > 0 && (
+                    <div className="mb-3 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                      {ingredientes.map((ing, i) => (
+                        <div key={i} className="flex items-center justify-between px-4 py-3"
+                          style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                          <span className="text-sm flex-1" style={{ color: '#1A2E25' }}>{ing.nome}</span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => ajustarGramas(i, -10)}
+                              className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
+                              style={{ border: '1px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
+                            <span className="text-sm font-medium w-12 text-center" style={{ color: '#1A2E25' }}>{ing.gramasPorPessoa}g</span>
+                            <button onClick={() => ajustarGramas(i, 10)}
+                              className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
+                              style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                            <button onClick={() => setIngredientes(prev => prev.filter((_, j) => j !== i))}
+                              className="ml-1 text-base" style={{ color: '#7BA892' }}>×</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <InputIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
+
+                  <div className="flex gap-3 mt-4">
+                    <button onClick={cancelar}
+                      className="flex-1 py-3 rounded-2xl text-sm font-medium"
+                      style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
+                      Cancelar
+                    </button>
+                    <button onClick={salvarRefeicao} disabled={!nomeRefeicao || ingredientes.length === 0}
+                      className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
+                      style={{ background: '#128C7E', color: '#fff' }}>
+                      Salvar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={abrirForm}
+                  className="w-full py-4 rounded-3xl text-sm font-semibold"
+                  style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
+                  + Adicionar refeição / prato
                 </button>
               )}
             </div>
 
-            {evento.refeicoes.map(ref => (
-              <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-                <div className="flex justify-between items-center mb-3">
-                  <p className="font-semibold" style={{ color: '#1A2E25' }}>{ref.nome}</p>
-                  <button onClick={() => removerRefeicao(ref.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
-                </div>
-                <div className="space-y-1">
-                  {ref.ingredientes.map((ing, i) => {
-                    const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
-                    return (
-                      <div key={i} className="flex justify-between text-sm py-1.5"
-                        style={{ borderBottom: i < ref.ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                        <span style={{ color: '#5A7A68' }}>{ing.nome}</span>
-                        <span className="font-medium" style={{ color: '#1A2E25' }}>{fmtKg(bruto)}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {adicionando ? (
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
-                <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição</p>
-
-                <div className="mb-4 relative">
-                  <input type="text" value={nomeRefeicao} onChange={e => handleNome(e.target.value)}
-                    placeholder="Nome (ex: Feijoada, Frango assado...)"
-                    className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-                    style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
-                  {sugestoesReceita.length > 0 && (
-                    <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-                      style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
-                      {sugestoesReceita.map(r => (
-                        <button key={r.id} onClick={() => selecionarReceita(r)}
-                          className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                          style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
-                          <span className="font-medium">{r.nome}</span>
-                          <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {receitaDaBase && ingredientes.length > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#E8F5EE' }}>
-                    <span className="text-xs font-medium flex-1" style={{ color: '#1A2E25' }}>
-                      {ingredientes.length} ingredientes carregados da base
-                    </span>
-                    <span className="text-xs" style={{ color: '#7BA892' }}>Ajuste se quiser</span>
-                  </div>
-                )}
-
-                {ingredientes.length > 0 && (
-                  <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
-                    {ingredientes.map((ing, i) => (
-                      <div key={i} className="flex items-center justify-between px-4 py-3"
-                        style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                        <span className="text-sm flex-1" style={{ color: '#1A2E25' }}>{ing.nome}</span>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => ajustarGramas(i, -10)}
-                            className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
-                            style={{ border: '1px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
-                          <span className="text-sm font-medium w-12 text-center" style={{ color: '#1A2E25' }}>{ing.gramasPorPessoa}g</span>
-                          <button onClick={() => ajustarGramas(i, 10)}
-                            className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
-                            style={{ background: '#128C7E', color: '#fff' }}>+</button>
-                          <button onClick={() => setIngredientes(prev => prev.filter((_, j) => j !== i))}
-                            className="ml-1 text-base px-1" style={{ color: '#7BA892' }}>×</button>
+            {/* LISTA DE REFEIÇÕES — desce conforme adicionadas */}
+            {evento.refeicoes.length > 0 && (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-wider px-1" style={{ color: '#7BA892' }}>
+                  {evento.refeicoes.length} refeição{evento.refeicoes.length > 1 ? 'ões' : ''} no cardápio
+                </p>
+                {evento.refeicoes.map(ref => {
+                  const cmvRef = (ref.custoEstimado && ref.precoVenda)
+                    ? calcularCMV(ref.custoEstimado, ref.precoVenda) : 0
+                  return (
+                    <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold" style={{ color: '#1A2E25' }}>{ref.nome}</p>
+                          <p className="text-xs mt-0.5 capitalize" style={{ color: '#7BA892' }}>
+                            {ref.categoria || 'principal'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {cmvRef > 0 && (
+                            <span className="px-2 py-1 rounded-xl text-xs font-bold" style={statusCMV(cmvRef)}>
+                              {cmvRef.toFixed(0)}%
+                            </span>
+                          )}
+                          <button onClick={() => removerRefeicao(ref.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
 
-                <InputIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
+                      {/* Custo / Preço inline */}
+                      {(ref.custoEstimado || ref.precoVenda) && (
+                        <div className="flex gap-4 text-xs mb-2 pt-2" style={{ borderTop: '1px solid #E4F2EA' }}>
+                          {ref.custoEstimado && (
+                            <span style={{ color: '#5A7A68' }}>Custo: <strong style={{ color: '#1A2E25' }}>{formatarMoeda(ref.custoEstimado)}</strong></span>
+                          )}
+                          {ref.precoVenda && (
+                            <span style={{ color: '#5A7A68' }}>Venda: <strong style={{ color: '#128C7E' }}>{formatarMoeda(ref.precoVenda)}</strong></span>
+                          )}
+                        </div>
+                      )}
 
-                <div className="flex gap-3 mt-4">
-                  <button onClick={cancelar}
-                    className="flex-1 py-3 rounded-2xl text-sm font-medium"
-                    style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
-                    Cancelar
-                  </button>
-                  <button onClick={salvarRefeicao} disabled={!nomeRefeicao || ingredientes.length === 0}
-                    className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
-                    style={{ background: '#128C7E', color: '#fff' }}>
-                    Salvar refeição
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => setAdicionando(true)}
-                className="w-full py-4 rounded-3xl text-sm font-semibold"
-                style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
-                + Adicionar refeição ao cardápio
-              </button>
-            )}
+                      <div className="space-y-1">
+                        {ref.ingredientes.map((ing, i) => {
+                          const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
+                          return (
+                            <div key={i} className="flex justify-between text-sm py-1"
+                              style={{ borderBottom: i < ref.ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                              <span style={{ color: '#5A7A68' }}>{ing.nome}</span>
+                              <span className="font-medium" style={{ color: '#1A2E25' }}>{fmtKg(bruto)} total</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
 
-            {!adicionando && evento.refeicoes.length > 0 && (
-              <Link href={`/receita/${id}/lista`}
-                className="w-full py-4 rounded-2xl font-semibold text-sm text-center block"
-                style={{ background: '#128C7E', color: '#fff' }}>
-                Gerar lista de compras
-              </Link>
+                <Link href={`/receita/${id}/lista`}
+                  className="w-full py-4 rounded-2xl font-semibold text-sm text-center block"
+                  style={{ background: '#128C7E', color: '#fff' }}>
+                  Gerar lista de compras →
+                </Link>
+              </>
             )}
           </>
         )}
@@ -382,56 +490,54 @@ export default function ReceitaPage() {
             {evento.refeicoes.length === 0 ? (
               <div className="text-center py-12">
                 <p className="font-semibold mb-2" style={{ color: '#1A2E25' }}>Nenhuma refeição cadastrada</p>
-                <p className="text-sm mb-5" style={{ color: '#5A7A68' }}>Monte o cardápio primeiro para calcular o CMV</p>
                 <button onClick={() => setAba('cardapio')} className="px-5 py-3 rounded-2xl text-sm font-semibold"
                   style={{ background: '#128C7E', color: '#fff' }}>Montar cardápio</button>
               </div>
             ) : (
               <>
-                {/* Preço cobrado do cliente */}
+                {/* Preço cobrado */}
                 <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Preço cobrado do cliente</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#7BA892' }}>Preço cobrado do cliente</p>
                   {editandoVenda ? (
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium" style={{ color: '#5A7A68' }}>R$</span>
                       <input type="number" value={inputVenda}
                         onChange={e => setInputVenda(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') salvarPrecoVenda(parseFloat(inputVenda)); if (e.key === 'Escape') setEditandoVenda(false) }}
+                        onKeyDown={e => { if (e.key === 'Enter') salvarPrecoVenda(parseFloat(inputVenda) || 0); if (e.key === 'Escape') setEditandoVenda(false) }}
                         autoFocus step="10" min="0" placeholder="0,00"
                         className="flex-1 px-4 py-3 rounded-2xl text-base outline-none font-semibold"
                         style={{ border: '1.5px solid #128C7E', background: '#F5FAF7', color: '#1A2E25' }} />
                       <button onClick={() => salvarPrecoVenda(parseFloat(inputVenda) || 0)}
                         className="px-4 py-3 rounded-2xl text-sm font-semibold"
-                        style={{ background: '#128C7E', color: '#fff' }}>Salvar</button>
+                        style={{ background: '#128C7E', color: '#fff' }}>OK</button>
                     </div>
                   ) : (
                     <button onClick={() => { setEditandoVenda(true); setInputVenda(evento.precoVenda > 0 ? String(evento.precoVenda) : '') }}
-                      className="w-full flex items-center justify-between"
-                      style={{ color: '#1A2E25' }}>
-                      <span className="text-2xl font-bold">
+                      className="w-full flex items-center justify-between">
+                      <span className="text-2xl font-bold" style={{ color: '#1A2E25' }}>
                         {evento.precoVenda > 0 ? formatarMoeda(evento.precoVenda) : '— Toque para definir'}
                       </span>
-                      <span className="text-base opacity-50" style={{ color: '#7BA892' }}>✎</span>
+                      <span style={{ color: '#7BA892' }}>✎</span>
                     </button>
                   )}
-                  {custoTotal > 0 && evento.precoVenda === 0 && (
-                    <p className="text-xs mt-3 font-medium" style={{ color: '#128C7E' }}>
+                  {custoEfetivo > 0 && evento.precoVenda === 0 && (
+                    <p className="text-xs mt-2 font-medium" style={{ color: '#128C7E' }}>
                       Sugestão com 30% CMV: {formatarMoeda(precoSugerido30)}
                     </p>
                   )}
                 </div>
 
-                {/* Resumo financeiro */}
-                {custoTotal > 0 && (
+                {/* Resumo */}
+                {custoEfetivo > 0 && (
                   <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
                     <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#7BA892' }}>Resumo financeiro</p>
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span style={{ color: '#5A7A68' }}>Custo total dos insumos</span>
-                        <span className="font-semibold" style={{ color: '#1A2E25' }}>{formatarMoeda(custoTotal)}</span>
+                        <span className="font-semibold" style={{ color: '#1A2E25' }}>{formatarMoeda(custoEfetivo)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span style={{ color: '#5A7A68' }}>Custo por convidado</span>
+                        <span style={{ color: '#5A7A68' }}>Custo por pessoa</span>
                         <span className="font-semibold" style={{ color: '#1A2E25' }}>{formatarMoeda(custoPorConvidado)}</span>
                       </div>
                       {evento.precoVenda > 0 && (
@@ -443,9 +549,9 @@ export default function ReceitaPage() {
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span style={{ color: '#5A7A68' }}>Margem bruta</span>
+                            <span style={{ color: '#5A7A68' }}>Margem</span>
                             <span className="font-semibold" style={{ color: lucro >= 0 ? '#128C7E' : '#E53935' }}>
-                              {evento.precoVenda > 0 ? ((lucro / evento.precoVenda) * 100).toFixed(1) : '0'}%
+                              {((lucro / evento.precoVenda) * 100).toFixed(1)}%
                             </span>
                           </div>
                           <div className="flex justify-between text-sm pt-2" style={{ borderTop: '1px solid #E4F2EA' }}>
@@ -460,67 +566,80 @@ export default function ReceitaPage() {
                   </div>
                 )}
 
-                {/* Referência CMV */}
-                {evento.precoVenda > 0 && (
-                  <div className="bg-white rounded-3xl p-4" style={{ border: '1.5px solid #D4EDE0' }}>
-                    <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#7BA892' }}>Referência</p>
-                    <div className="grid grid-cols-3 gap-2 text-xs text-center">
-                      <div className="p-2 rounded-xl" style={{ background: '#E8F5EE', color: '#128C7E' }}>
-                        <p className="font-bold">≤30%</p><p>Excelente</p>
-                      </div>
-                      <div className="p-2 rounded-xl" style={{ background: '#FFF8E1', color: '#F57C00' }}>
-                        <p className="font-bold">≤42%</p><p>Atenção</p>
-                      </div>
-                      <div className="p-2 rounded-xl" style={{ background: '#FFEBEE', color: '#E53935' }}>
-                        <p className="font-bold">&gt;42%</p><p>Crítico</p>
-                      </div>
+                {/* CMV por refeição (quando tem custo/preço por refeição) */}
+                {evento.refeicoes.some(r => r.custoEstimado && r.precoVenda) && (
+                  <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                    <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#7BA892' }}>CMV por prato</p>
                     </div>
+                    {evento.refeicoes.filter(r => r.custoEstimado || r.precoVenda).map((ref, i) => {
+                      const cmv = (ref.custoEstimado && ref.precoVenda) ? calcularCMV(ref.custoEstimado, ref.precoVenda) : 0
+                      return (
+                        <div key={ref.id} className="px-5 py-4 flex items-center justify-between"
+                          style={{ borderBottom: i < evento.refeicoes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                          <div>
+                            <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>{ref.nome}</p>
+                            <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>
+                              {ref.custoEstimado ? `Custo: ${formatarMoeda(ref.custoEstimado)}` : ''}
+                              {ref.precoVenda ? ` · Venda: ${formatarMoeda(ref.precoVenda)}` : ''}
+                            </p>
+                          </div>
+                          {cmv > 0 && (
+                            <span className="px-2.5 py-1.5 rounded-xl text-xs font-bold" style={statusCMV(cmv)}>
+                              {cmv.toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
-                {/* Preços dos ingredientes */}
-                <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
-                  <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
-                    <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>
-                      Preços dos insumos
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>
-                      Preço de compra por kg · {precosFaltando > 0 ? `${precosFaltando} sem preço` : 'todos preenchidos'}
-                    </p>
+                {/* Preços por kg */}
+                {ingsUnicos.length > 0 && (
+                  <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                    <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#7BA892' }}>
+                        Preços dos insumos (por kg)
+                      </p>
+                      {precosFaltando > 0 && (
+                        <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>{precosFaltando} sem preço</p>
+                      )}
+                    </div>
+                    {ingsUnicos.map((nome, i) => {
+                      const preco = getPreco(nome)
+                      return (
+                        <div key={nome} className="px-5 py-4 flex items-center justify-between"
+                          style={{ borderBottom: i < ingsUnicos.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                          <p className="text-sm flex-1" style={{ color: '#1A2E25' }}>{nome}</p>
+                          {editandoPreco === nome ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
+                              <input type="number" value={editPrecoInput}
+                                onChange={e => setEditPrecoInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') salvarPreco(nome, parseFloat(editPrecoInput)); if (e.key === 'Escape') setEditandoPreco(null) }}
+                                autoFocus step="0.01" min="0" placeholder="0,00"
+                                className="w-20 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
+                                style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
+                              <span className="text-xs" style={{ color: '#7BA892' }}>/kg</span>
+                              <button onClick={() => salvarPreco(nome, parseFloat(editPrecoInput))}
+                                className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
+                              <button onClick={() => setEditandoPreco(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium" style={{ color: preco > 0 ? '#1A2E25' : '#C8E4D4' }}>
+                                {preco > 0 ? `R$ ${preco.toFixed(2)}/kg` : '—'}
+                              </span>
+                              <button onClick={() => { setEditandoPreco(nome); setEditPrecoInput(preco > 0 ? String(preco) : '') }}
+                                className="text-base opacity-40 hover:opacity-80" style={{ color: '#7BA892' }}>✎</button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                  {ingsUnicos.map((nome, i) => {
-                    const preco = getPreco(nome)
-                    return (
-                      <div key={nome} className="px-5 py-4 flex items-center justify-between"
-                        style={{ borderBottom: i < ingsUnicos.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                        <p className="text-sm flex-1" style={{ color: '#1A2E25' }}>{nome}</p>
-                        {editandoPreco === nome ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
-                            <input type="number" value={editPrecoInput}
-                              onChange={e => setEditPrecoInput(e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter') salvarPreco(nome, parseFloat(editPrecoInput)); if (e.key === 'Escape') setEditandoPreco(null) }}
-                              autoFocus step="0.01" min="0" placeholder="0,00"
-                              className="w-20 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
-                              style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
-                            <span className="text-xs" style={{ color: '#7BA892' }}>/kg</span>
-                            <button onClick={() => salvarPreco(nome, parseFloat(editPrecoInput))}
-                              className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
-                            <button onClick={() => setEditandoPreco(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium" style={{ color: preco > 0 ? '#1A2E25' : '#C8E4D4' }}>
-                              {preco > 0 ? `R$ ${preco.toFixed(2)}/kg` : '—'}
-                            </span>
-                            <button onClick={() => { setEditandoPreco(nome); setEditPrecoInput(preco > 0 ? String(preco) : '') }}
-                              className="text-base opacity-40 hover:opacity-80" style={{ color: '#7BA892' }}>✎</button>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                )}
               </>
             )}
           </>

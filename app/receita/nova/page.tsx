@@ -3,28 +3,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-function Contador({ label, sublabel, value, onChange }: {
-  label: string; sublabel: string; value: number; onChange: (v: number) => void
-}) {
-  return (
-    <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #E4F2EA' }}>
-      <div>
-        <p className="font-medium text-base" style={{ color: '#1A2E25' }}>{label}</p>
-        <p className="text-sm" style={{ color: '#5A7A68' }}>{sublabel}</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <button type="button" onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-          style={{ border: '1.5px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
-        <span className="w-6 text-center font-semibold text-lg" style={{ color: '#1A2E25' }}>{value}</span>
-        <button type="button" onClick={() => onChange(value + 1)}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-          style={{ background: '#128C7E', color: '#fff' }}>+</button>
-      </div>
-    </div>
-  )
-}
-
 const TIPOS_EVENTO = [
   { key: 'churrasco', label: 'Churrasco' },
   { key: 'casamento', label: 'Casamento' },
@@ -37,24 +15,39 @@ const TIPOS_EVENTO = [
   { key: 'outro', label: 'Outro' },
 ]
 
+const DURACOES = [
+  { key: 'coquetel', label: 'Coquetel', desc: 'até 2h' },
+  { key: 'tarde', label: 'Tarde', desc: '4h' },
+  { key: 'noite', label: 'Noite', desc: '6h' },
+  { key: 'dia', label: 'Dia inteiro', desc: '8h+' },
+]
+
+const PERFIS = [
+  { key: 'leve', label: 'Leve', desc: 'Pouco apetite, finger food' },
+  { key: 'moderado', label: 'Moderado', desc: 'Consumo padrão' },
+  { key: 'intenso', label: 'Intenso', desc: 'Muito apetite, churrasco' },
+]
+
 export default function NovaReceitaPage() {
   const router = useRouter()
   const [nome, setNome] = useState('')
   const [tipoEvento, setTipoEvento] = useState('churrasco')
   const [data, setData] = useState('')
-  const [homens, setHomens] = useState(0)
-  const [mulheres, setMulheres] = useState(0)
-  const [criancas, setCriancas] = useState(0)
+  const [totalPessoas, setTotalPessoas] = useState(20)
+  const [duracao, setDuracao] = useState('tarde')
+  const [perfilConsumo, setPerfilConsumo] = useState('moderado')
 
-  const total = homens + mulheres + criancas
-  const podeCriar = nome && total > 0
+  const podeCriar = nome.trim() && totalPessoas > 0
 
   function criar() {
     if (!podeCriar) return
     const eventos = JSON.parse(localStorage.getItem('eventos') || '[]')
     const novo = {
       id: Date.now().toString(),
-      nome, tipoEvento, data, homens, mulheres, criancas, totalPessoas: total,
+      nome: nome.trim(), tipoEvento, data,
+      totalPessoas, duracao, perfilConsumo,
+      // mantém compatibilidade com módulo antigo
+      homens: 0, mulheres: 0, criancas: 0,
       refeicoes: [], precos: [], precoVenda: 0,
     }
     eventos.push(novo)
@@ -72,6 +65,8 @@ export default function NovaReceitaPage() {
       <p className="text-sm mb-8" style={{ color: '#5A7A68' }}>Cardápio, compras e financeiro em um só lugar</p>
 
       <div className="space-y-4">
+
+        {/* Nome */}
         <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>Nome do evento</label>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)}
@@ -80,6 +75,7 @@ export default function NovaReceitaPage() {
             style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
         </div>
 
+        {/* Tipo */}
         <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#1A2E25' }}>Tipo de evento</p>
           <div className="grid grid-cols-3 gap-2">
@@ -95,6 +91,66 @@ export default function NovaReceitaPage() {
           </div>
         </div>
 
+        {/* Total de pessoas */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium" style={{ color: '#1A2E25' }}>Total de convidados</p>
+            <span className="text-2xl font-bold" style={{ color: '#128C7E' }}>{totalPessoas}</span>
+          </div>
+          <input type="range" min="5" max="500" step="5" value={totalPessoas}
+            onChange={e => setTotalPessoas(parseInt(e.target.value))}
+            className="w-full" style={{ accentColor: '#128C7E' }} />
+          <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+            <span>5</span><span>100</span><span>250</span><span>500</span>
+          </div>
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {[10, 20, 50, 80, 100, 150, 200].map(n => (
+              <button key={n} onClick={() => setTotalPessoas(n)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium"
+                style={totalPessoas === n
+                  ? { background: '#128C7E', color: '#fff' }
+                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Duração */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+          <p className="text-sm font-medium mb-3" style={{ color: '#1A2E25' }}>Duração do evento</p>
+          <div className="grid grid-cols-2 gap-2">
+            {DURACOES.map(d => (
+              <button key={d.key} onClick={() => setDuracao(d.key)}
+                className="py-3 rounded-2xl text-left px-4"
+                style={duracao === d.key
+                  ? { background: '#128C7E', color: '#fff' }
+                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                <p className="text-sm font-semibold">{d.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: duracao === d.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{d.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Perfil de consumo */}
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+          <p className="text-sm font-medium mb-3" style={{ color: '#1A2E25' }}>Perfil de consumo</p>
+          <div className="space-y-2">
+            {PERFIS.map(p => (
+              <button key={p.key} onClick={() => setPerfilConsumo(p.key)}
+                className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left"
+                style={perfilConsumo === p.key
+                  ? { background: '#128C7E', color: '#fff' }
+                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                <span className="font-semibold text-sm">{p.label}</span>
+                <span className="text-xs" style={{ color: perfilConsumo === p.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{p.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Data */}
         <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>
             Data do evento <span style={{ color: '#7BA892' }}>(opcional)</span>
@@ -103,25 +159,12 @@ export default function NovaReceitaPage() {
             className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
             style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
         </div>
-
-        <div className="bg-white rounded-3xl px-5 pb-2" style={{ border: '1.5px solid #D4EDE0' }}>
-          <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#1A2E25' }}>Número de convidados</p>
-          <p className="text-sm pb-2" style={{ color: '#5A7A68' }}>Para calcular quantidades e custo por pessoa</p>
-          <Contador label="Homens" sublabel="Porção completa" value={homens} onChange={setHomens} />
-          <Contador label="Mulheres" sublabel="Porção reduzida" value={mulheres} onChange={setMulheres} />
-          <Contador label="Crianças" sublabel="Meia porção" value={criancas} onChange={setCriancas} />
-          {total > 0 && (
-            <p className="text-sm py-4 font-medium" style={{ color: '#7BA892' }}>
-              {total} convidado{total > 1 ? 's' : ''}
-            </p>
-          )}
-        </div>
       </div>
 
       <button onClick={criar} disabled={!podeCriar}
         className="w-full mt-6 py-4 rounded-2xl font-semibold text-base disabled:opacity-40"
         style={{ background: '#128C7E', color: '#fff' }}>
-        Criar evento e montar cardápio
+        Criar evento e montar cardápio →
       </button>
     </main>
   )
