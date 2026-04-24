@@ -2,96 +2,102 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numeroDias: number }
+interface Estadia {
+  id: string; nome: string
+  homens: number; mulheres: number; criancas: number
+  numeroDias: number; dataInicio?: string; dataFim?: string
+}
+
+function saudacao(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Bom dia'
+  if (h < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+function dataHoje(): string {
+  return new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+}
 
 export default function DashboardPage() {
   const [estadias, setEstadias] = useState<Estadia[]>([])
-  const [aberto, setAberto] = useState(false)
 
   useEffect(() => {
     setEstadias(JSON.parse(localStorage.getItem('estadias') || '[]'))
   }, [])
 
   return (
-    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
+    <main className="min-h-screen max-w-lg mx-auto flex flex-col" style={{ background: '#F0F7F2' }}>
 
-      <header className="mb-8">
-        <span className="text-xl font-bold tracking-tight" style={{ color: '#1A2E25' }}>Despensa</span>
-        <p className="text-sm mt-0.5" style={{ color: '#7BA892' }}>Assertividade nas compras</p>
-      </header>
+      {/* Header */}
+      <div className="px-5 pt-10 pb-6">
+        <p className="text-xs font-medium mb-1 capitalize" style={{ color: '#7BA892' }}>{dataHoje()}</p>
+        <h1 className="text-2xl font-bold" style={{ color: '#1A2E25' }}>{saudacao()}</h1>
+        <p className="text-sm mt-0.5" style={{ color: '#5A7A68' }}>
+          {estadias.length === 0
+            ? 'Nenhum planejamento ainda'
+            : `${estadias.length} planejamento${estadias.length !== 1 ? 's' : ''} salvo${estadias.length !== 1 ? 's' : ''}`}
+        </p>
+      </div>
 
-      <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Novo planejamento</p>
-      <Link href="/estadia/nova"
-        className="flex items-center justify-between p-5 rounded-3xl mb-8"
-        style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: '#E8F5EE', color: '#128C7E' }}>Casas</span>
+      {/* Lista de planejamentos */}
+      <div className="flex-1 px-5">
+        {estadias.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-3xl mb-5 flex items-center justify-center"
+              style={{ background: '#E8F5EE' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#128C7E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 22V12h6v10" stroke="#128C7E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <p className="font-semibold text-base mb-1" style={{ color: '#1A2E25' }}>Pronto para planejar</p>
+            <p className="text-sm" style={{ color: '#5A7A68' }}>Crie seu primeiro planejamento abaixo</p>
           </div>
-          <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>Casa de Aluguel</p>
-          <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>Airbnb, temporada e chalés</p>
-        </div>
-        <span className="text-lg" style={{ color: '#C8E4D4' }}>→</span>
-      </Link>
+        ) : (
+          <div className="space-y-3">
+            {estadias.map((e) => {
+              const total = e.homens + e.mulheres + e.criancas
+              const partes = [
+                e.homens > 0 ? `${e.homens}H` : '',
+                e.mulheres > 0 ? `${e.mulheres}M` : '',
+                e.criancas > 0 ? `${e.criancas}C` : '',
+              ].filter(Boolean).join(' ')
+              const periodo = e.dataInicio && e.dataFim
+                ? `${new Date(e.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} – ${new Date(e.dataFim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+                : `${e.numeroDias} dia${e.numeroDias !== 1 ? 's' : ''}`
 
-      {estadias.length > 0 ? (
-        <div>
-          <button
-            onClick={() => setAberto(v => !v)}
-            className="w-full flex items-center justify-between px-5 py-4 rounded-3xl"
-            style={{ background: aberto ? '#E8F5EE' : '#fff', border: '1.5px solid #D4EDE0' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
-                style={{ background: aberto ? '#128C7E' : '#F0F7F2' }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M2 4h12M2 8h8M2 12h5" stroke={aberto ? '#fff' : '#7BA892'} strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>Meus planejamentos</p>
-                <p className="text-xs" style={{ color: '#7BA892' }}>{estadias.length} salvo{estadias.length !== 1 ? 's' : ''}</p>
-              </div>
-            </div>
-            <span className="text-sm font-medium"
-              style={{ color: '#128C7E', transform: aberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>→</span>
-          </button>
+              return (
+                <Link key={e.id} href={`/estadia/${e.id}`}
+                  className="flex items-center justify-between p-5 rounded-3xl"
+                  style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-base truncate" style={{ color: '#1A2E25' }}>{e.nome}</p>
+                    <p className="text-sm mt-0.5" style={{ color: '#5A7A68' }}>
+                      {total} hóspede{total !== 1 ? 's' : ''}
+                      {partes ? ` · ${partes}` : ''}
+                      {' · '}{periodo}
+                    </p>
+                  </div>
+                  <span className="ml-4 flex-shrink-0" style={{ color: '#C8E4D4', fontSize: 18 }}>→</span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-          {aberto && (
-            <div className="mt-3 rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0', background: '#fff' }}>
-              <div className="px-5 py-2.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#7BA892' }}>Casas de Aluguel</p>
-              </div>
-              {estadias.map((e, i) => {
-                const total = e.homens + e.mulheres + e.criancas
-                const partes = [
-                  e.homens > 0 ? `${e.homens}H` : '',
-                  e.mulheres > 0 ? `${e.mulheres}M` : '',
-                  e.criancas > 0 ? `${e.criancas}C` : '',
-                ].filter(Boolean).join(' ')
-                return (
-                  <Link key={e.id} href={`/estadia/${e.id}`}
-                    className="flex items-center justify-between px-5 py-3.5"
-                    style={{ borderBottom: i < estadias.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: '#1A2E25' }}>{e.nome}</p>
-                      <p className="text-xs mt-0.5" style={{ color: '#7BA892' }}>
-                        {total} hóspedes · {partes} · {e.numeroDias} dias
-                      </p>
-                    </div>
-                    <span className="text-xs" style={{ color: '#C8E4D4' }}>→</span>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="font-semibold mb-1" style={{ color: '#1A2E25' }}>Nenhum planejamento ainda</p>
-          <p className="text-sm" style={{ color: '#5A7A68' }}>Crie uma nova casa de aluguel para começar</p>
-        </div>
-      )}
+      {/* CTA fixo no rodapé */}
+      <div className="px-5 py-6">
+        <Link href="/estadia/nova"
+          className="flex items-center justify-center gap-2 w-full py-4 rounded-3xl font-semibold text-base"
+          style={{ background: '#128C7E', color: '#fff' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
+          Novo planejamento
+        </Link>
+      </div>
 
     </main>
   )
