@@ -239,21 +239,70 @@ export function classificarIngredienteDesconhecido(nome: string): Ingrediente {
   return { nome, categoria: 'tempero', ...d, sinonimos: [] }
 }
 
-// Busca inteligente — retorna sugestões para o termo digitado
+// Busca local síncrona — retorna sugestões do banco
 export function buscarIngrediente(termo: string): Ingrediente[] {
   if (!termo || termo.length < 2) return []
   const t = norm(termo)
-  const resultados = DB.filter(ing => {
+  return DB.filter(ing => {
     const nome = norm(ing.nome)
     const sins = ing.sinonimos.map(norm)
     return nome.includes(t) || sins.some(s => s.includes(t))
   }).slice(0, 6)
+}
 
-  // Se nenhum resultado no DB, cria um ingrediente a partir da classificação automática
-  if (resultados.length === 0) {
-    return [classificarIngredienteDesconhecido(termo)]
-  }
-  return resultados
+// Cache em localStorage para não chamar a API duas vezes para o mesmo ingrediente
+function getCacheIA(nome: string): Ingrediente | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const cache = JSON.parse(localStorage.getItem('ingredientes_ia_cache') || '{}')
+    return cache[norm(nome)] ?? null
+  } catch { return null }
+}
+function setCacheIA(ing: Ingrediente) {
+  if (typeof window === 'undefined') return
+  try {
+    const cache = JSON.parse(localStorage.getItem('ingredientes_ia_cache') || '{}')
+    cache[norm(ing.nome)] = ing
+    localStorage.setItem('ingredientes_ia_cache', JSON.stringify(cache))
+  } catch {}
+}
+
+// Busca com IA — chama API quando ingrediente não está no banco local
+export async function buscarIngredienteIA(termo: string): Promise<Ingrediente> {
+  const t = norm(termo)
+
+  // 1. Banco local
+  const local = DB.find(ing => norm(ing.nome).includes(t) || ing.sinonimos.map(norm).some(s => s.includes(t)))
+  if (local) return local
+
+  // 2. Cache localStorage
+  const cached = getCacheIA(termo)
+  if (cached) return cached
+
+  // 3. API Claude
+  try {
+    const res = await fetch('/api/ingrediente', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: termo }),
+    })
+    if (res.ok) {
+      const dados = await res.json()
+      const ing: Ingrediente = {
+        nome: dados.nome ?? termo,
+        categoria: dados.categoria ?? 'tempero',
+        percapitaGramas: dados.percapitaGramas ?? 50,
+        fatorCorrecao: dados.fatorCorrecao ?? 1.10,
+        fatorCoccao: 1.00,
+        sinonimos: [],
+      }
+      setCacheIA(ing)
+      return ing
+    }
+  } catch {}
+
+  // 4. Fallback classificação por palavras-chave
+  return classificarIngredienteDesconhecido(termo)
 }
 
 export function encontrarIngrediente(nome: string): Ingrediente | undefined {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { buscarIngrediente, type Ingrediente } from '@/lib/ingredientes-db'
+import { buscarIngrediente, buscarIngredienteIA, type Ingrediente } from '@/lib/ingredientes-db'
 import { buscarReceita, resolverReceita, type Receita } from '@/lib/receitas-db'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
 import { formatarPeso } from '@/lib/lista-compras'
@@ -17,19 +17,41 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
   const [sugestoes, setSugestoes] = useState<Ingrediente[]>([])
   const [selecionado, setSelecionado] = useState<Ingrediente | null>(null)
   const [gramas, setGramas] = useState('')
+  const [buscandoIA, setBuscandoIA] = useState(false)
+  const [veioDaIA, setVeioDaIA] = useState(false)
+  const timerRef = { current: null as ReturnType<typeof setTimeout> | null }
 
   function buscar(v: string) {
-    setTermo(v); setSelecionado(null)
-    setSugestoes(v.length >= 2 ? buscarIngrediente(v) : [])
+    setTermo(v)
+    setSelecionado(null)
+    setVeioDaIA(false)
+    if (timerRef.current) clearTimeout(timerRef.current)
+
+    if (v.length < 2) { setSugestoes([]); return }
+
+    const locais = buscarIngrediente(v)
+    setSugestoes(locais)
+
+    if (locais.length === 0) {
+      timerRef.current = setTimeout(async () => {
+        setBuscandoIA(true)
+        const ing = await buscarIngredienteIA(v)
+        setSugestoes([ing])
+        setVeioDaIA(true)
+        setBuscandoIA(false)
+      }, 600)
+    }
   }
+
   function selecionar(ing: Ingrediente) {
     setSelecionado(ing); setTermo(ing.nome); setGramas(String(ing.percapitaGramas)); setSugestoes([])
   }
   function confirmar() {
     if (!selecionado || !gramas) return
     onAdicionar({ nome: selecionado.nome, gramasPorPessoa: parseFloat(gramas), fc: selecionado.fatorCorrecao, fcc: selecionado.fatorCoccao, categoria: selecionado.categoria })
-    setTermo(''); setSelecionado(null); setGramas('')
+    setTermo(''); setSelecionado(null); setGramas(''); setVeioDaIA(false)
   }
+
   return (
     <div className="space-y-2">
       <div className="relative">
@@ -37,9 +59,20 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
           placeholder="Adicionar ingrediente..."
           className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
           style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+        {buscandoIA && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+              style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+          </div>
+        )}
         {sugestoes.length > 0 && (
           <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
             style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+            {veioDaIA && (
+              <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
+                <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
+              </div>
+            )}
             {sugestoes.map(s => (
               <button key={s.nome} onClick={() => selecionar(s)}
                 className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
@@ -53,7 +86,7 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
       </div>
       {selecionado && (
         <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#E8F5EE' }}>
-          <span className="flex-1 text-sm font-medium" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
+          <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
           <div className="flex items-center gap-1">
             <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
               className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
