@@ -1,11 +1,9 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
@@ -15,15 +13,19 @@ export default function LoginPage() {
     e.preventDefault()
     setErro('')
     setCarregando(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    if (error) {
-      if (error.code === 'email_not_confirmed') {
-        setErro('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.')
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
+      if (error) {
+        if (error.code === 'email_not_confirmed') {
+          setErro('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.')
+        } else {
+          setErro(error.message)
+        }
       } else {
-        setErro('E-mail ou senha incorretos.')
+        window.location.href = '/dashboard'
       }
-    } else {
-      router.push('/dashboard')
+    } catch (err) {
+      setErro(String(err))
     }
     setCarregando(false)
   }
