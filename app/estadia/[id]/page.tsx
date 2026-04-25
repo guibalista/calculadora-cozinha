@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { buscarIngrediente, buscarIngredienteIA, type Ingrediente } from '@/lib/ingredientes-db'
 import { buscarReceita, resolverReceita, type Receita } from '@/lib/receitas-db'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
@@ -10,7 +11,7 @@ import { formatarPeso } from '@/lib/lista-compras'
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; fcc: number; categoria: string }
 interface Prato { id: string; nome: string; ingredientes: IngPrato[] }
 interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
-interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numeroDias: number; dias: Dia[] }
+interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numero_dias: number; dias: Dia[] }
 
 function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => void }) {
   const [termo, setTermo] = useState('')
@@ -131,16 +132,25 @@ export default function EstadiaPage() {
   const [sugestoesReceita, setSugestoesReceita] = useState<Receita[]>([])
   const [receitaDaBase, setReceitaDaBase] = useState(false)
 
+  type SugestaoIA = { nome: string; tipo: string; ingredientes: IngPrato[] }
+  const [sugestoesIA, setSugestoesIA] = useState<SugestaoIA[]>([])
+  const [carregandoIA, setCarregandoIA] = useState(false)
+  const [mostrandoSugestoes, setMostrandoSugestoes] = useState(false)
+
   useEffect(() => {
-    const estadias = JSON.parse(localStorage.getItem('estadias') || '[]')
-    const found = estadias.find((e: Estadia) => e.id === id)
-    if (found) setEstadia(found)
+    async function carregar() {
+      const { data } = await supabase
+        .from('estadias')
+        .select('id, nome, homens, mulheres, criancas, numero_dias, dias')
+        .eq('id', id)
+        .single()
+      if (data) setEstadia(data as Estadia)
+    }
+    carregar()
   }, [id])
 
-  function salvar(nova: Estadia) {
-    const estadias = JSON.parse(localStorage.getItem('estadias') || '[]')
-    const idx = estadias.findIndex((e: Estadia) => e.id === id)
-    if (idx >= 0) { estadias[idx] = nova; localStorage.setItem('estadias', JSON.stringify(estadias)) }
+  async function salvar(nova: Estadia) {
+    await supabase.from('estadias').update({ dias: nova.dias }).eq('id', id)
     setEstadia(nova)
   }
 
@@ -160,6 +170,34 @@ export default function EstadiaPage() {
   function cancelarPrato() {
     setAdicionandoPrato(false); setNomePrato(''); setIngredientes([])
     setReceitaDaBase(false); setSugestoesReceita([])
+  }
+
+  async function buscarSugestoesIA() {
+    if (!estadia) return
+    setCarregandoIA(true)
+    setMostrandoSugestoes(true)
+    setSugestoesIA([])
+    const diasJaPlaneados = estadia.dias.filter(d => d.pratos.length > 0).length
+    const res = await fetch('/api/cardapio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        homens: estadia.homens, mulheres: estadia.mulheres, criancas: estadia.criancas,
+        numeroDias: estadia.numero_dias, diasJaPlaneados,
+      }),
+    })
+    const json = await res.json()
+    setSugestoesIA(json.sugestoes ?? [])
+    setCarregandoIA(false)
+  }
+
+  function adicionarSugestao(sugestao: SugestaoIA) {
+    if (!estadia) return
+    const novo = { id: Date.now().toString(), nome: sugestao.nome, ingredientes: sugestao.ingredientes }
+    const nova = { ...estadia, dias: estadia.dias.map((d, i) => i === diaAtivo ? { ...d, pratos: [...d.pratos, novo] } : d) }
+    salvar(nova)
+    setMostrandoSugestoes(false)
+    setSugestoesIA([])
   }
 
   function removerIngrediente(idx: number) {
@@ -216,14 +254,21 @@ export default function EstadiaPage() {
           <div className="min-w-0">
             <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#1A2E25' }}>{estadia.nome}</h1>
             <p className="text-sm mt-1" style={{ color: '#5A7A68' }}>
-              {estadia.homens + estadia.mulheres + estadia.criancas} hóspedes · {estadia.numeroDias} dias
+              {estadia.homens + estadia.mulheres + estadia.criancas} hóspedes · {estadia.numero_dias} dias
             </p>
           </div>
-          <Link href={`/estadia/${id}/lista`}
-            className="flex-shrink-0 px-4 py-2.5 rounded-2xl text-sm font-semibold"
-            style={{ background: '#128C7E', color: '#fff' }}>
-            Lista de compras
-          </Link>
+          <div className="flex flex-col gap-2 flex-shrink-0">
+            <Link href={`/estadia/${id}/lista`}
+              className="px-4 py-2.5 rounded-2xl text-sm font-semibold text-center"
+              style={{ background: '#128C7E', color: '#fff' }}>
+              Lista de compras
+            </Link>
+            <button onClick={buscarSugestoesIA}
+              className="px-4 py-2 rounded-2xl text-xs font-semibold text-center"
+              style={{ border: '1.5px solid #128C7E', color: '#128C7E', background: '#fff' }}>
+              Sugerir cardápio
+            </button>
+          </div>
         </div>
       </div>
 
@@ -403,6 +448,53 @@ export default function EstadiaPage() {
           </div>
         )}
       </div>
+
+      {mostrandoSugestoes && (
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(26,46,37,0.5)' }}
+          onClick={() => { if (!carregandoIA) { setMostrandoSugestoes(false); setSugestoesIA([]) } }}>
+          <div className="mt-auto rounded-t-3xl max-h-[80vh] overflow-y-auto"
+            style={{ background: '#F0F7F2' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0" style={{ background: '#F0F7F2' }}>
+              <div>
+                <p className="font-bold text-base" style={{ color: '#1A2E25' }}>Sugestões de cardápio</p>
+                <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>Toque para adicionar ao dia selecionado</p>
+              </div>
+              <button onClick={() => { setMostrandoSugestoes(false); setSugestoesIA([]) }}
+                className="text-2xl leading-none" style={{ color: '#5A7A68' }}>×</button>
+            </div>
+
+            {carregandoIA ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+                <p className="text-sm" style={{ color: '#5A7A68' }}>Montando cardápio para o grupo...</p>
+              </div>
+            ) : (
+              <div className="px-5 pb-8 space-y-3">
+                {sugestoesIA.map((s, i) => (
+                  <button key={i} onClick={() => adicionarSugestao(s)}
+                    className="w-full text-left p-4 rounded-3xl"
+                    style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm" style={{ color: '#1A2E25' }}>{s.nome}</p>
+                        <p className="text-xs mt-1" style={{ color: '#7BA892' }}>
+                          {s.ingredientes.map(i => i.nome).join(', ')}
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-xl flex-shrink-0"
+                        style={{ background: '#E8F5EE', color: '#128C7E' }}>
+                        + Adicionar
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   )
 }

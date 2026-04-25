@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -63,18 +64,25 @@ export default function NovaEstadiaPage() {
     : 0
   const podeCriar = nome && dataInicio && dataFim && numeroDias > 0 && totalPessoas > 0
 
-  function criar() {
+  async function criar() {
     if (!podeCriar) return
-    const estadias = JSON.parse(localStorage.getItem('estadias') || '[]')
-    const nova = {
-      id: Date.now().toString(),
-      nome, homens, mulheres, criancas,
-      dataInicio, dataFim, numeroDias,
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const id = Date.now().toString()
+    const { error } = await supabase.from('estadias').insert({
+      id,
+      user_id: user.id,
+      nome,
+      homens,
+      mulheres,
+      criancas,
+      numero_dias: numeroDias,
+      data_inicio: dataInicio,
+      data_fim: dataFim,
       dias: gerarDias(dataInicio, dataFim),
-    }
-    estadias.push(nova)
-    localStorage.setItem('estadias', JSON.stringify(estadias))
-    router.push(`/estadia/${nova.id}`)
+    })
+    if (!error) router.push(`/estadia/${id}`)
   }
 
   return (

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
 import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
 import { baixarPDF, type SecaoPDF } from '@/lib/exportar-pdf'
@@ -10,10 +11,17 @@ import { converterParaCompra } from '@/lib/unidades-compra'
 interface Ingrediente { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
 interface Prato { id: string; nome: string; ingredientes: Ingrediente[] }
 interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
-interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numeroDias: number; dataInicio?: string; dataFim?: string; dias: Dia[] }
+interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numero_dias: number; data_inicio?: string; data_fim?: string; dias: Dia[] }
 
 type Cenario = 'moderado' | 'conservador' | 'agressivo'
 const FATORES: Record<Cenario, number> = { moderado: 0.85, conservador: 1.00, agressivo: 1.25 }
+
+function getPrecos(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem('precos_ingredientes') || '{}') } catch { return {} }
+}
+function savePrecos(p: Record<string, number>) {
+  localStorage.setItem('precos_ingredientes', JSON.stringify(p))
+}
 
 export default function ListaComprasPage() {
   const { id } = useParams<{ id: string }>()
@@ -23,12 +31,23 @@ export default function ListaComprasPage() {
   const [overrides, setOverrides] = useState<Record<string, number>>({})
   const [editando, setEditando] = useState<string | null>(null)
   const [editInput, setEditInput] = useState('')
+  const [precos, setPrecos] = useState<Record<string, number>>({})
+  const [editandoPreco, setEditandoPreco] = useState<string | null>(null)
+  const [editPrecoInput, setEditPrecoInput] = useState('')
 
   useEffect(() => {
-    const estadias = JSON.parse(localStorage.getItem('estadias') || '[]')
-    setEstadia(estadias.find((e: Estadia) => e.id === id) ?? null)
+    async function carregar() {
+      const { data } = await supabase
+        .from('estadias')
+        .select('id, nome, homens, mulheres, criancas, numero_dias, data_inicio, data_fim, dias')
+        .eq('id', id)
+        .single()
+      setEstadia((data as Estadia) ?? null)
+    }
+    carregar()
   }, [id])
 
+  useEffect(() => { setPrecos(getPrecos()) }, [])
   useEffect(() => { setOverrides({}) }, [cenario])
 
   if (!estadia) return (
@@ -73,8 +92,8 @@ export default function ListaComprasPage() {
     estadia.criancas > 0 ? `${estadia.criancas}C` : '',
   ].filter(Boolean).join(' ')
 
-  const periodo = estadia.dataInicio && estadia.dataFim
-    ? `${new Date(estadia.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} a ${new Date(estadia.dataFim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+  const periodo = estadia.data_inicio && estadia.data_fim
+    ? `${new Date(estadia.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} a ${new Date(estadia.data_fim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
     : undefined
 
   const nomeCenario = cenario === 'moderado' ? 'Moderado (-15%)' : cenario === 'conservador' ? 'Conservador (padrao)' : 'Agressivo (+25%)'
@@ -113,6 +132,27 @@ export default function ListaComprasPage() {
     const g = parseFloat(editInput)
     if (!isNaN(g) && g > 0) setOverrides(p => ({ ...p, [editando]: g / 1000 }))
     setEditando(null)
+  }
+
+  function iniciarEditPreco(nome: string) {
+    setEditandoPreco(nome)
+    setEditPrecoInput(precos[nome] ? String(precos[nome]) : '')
+  }
+  function confirmarEditPreco() {
+    if (!editandoPreco) return
+    const v = parseFloat(editPrecoInput.replace(',', '.'))
+    const novos = { ...precos }
+    if (!isNaN(v) && v > 0) novos[editandoPreco] = v
+    else delete novos[editandoPreco]
+    setPrecos(novos)
+    savePrecos(novos)
+    setEditandoPreco(null)
+  }
+
+  function custoItem(nome: string, brutoKg: number): number | null {
+    const p = precos[nome]
+    if (!p) return null
+    return brutoKg * p
   }
 
   async function exportarPDF(modo: 'consolidado' | 'pordia') {
@@ -203,44 +243,87 @@ export default function ListaComprasPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {grupos.map(grupo => (
-            <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
-              <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
-                <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>{grupo.setor}</p>
-              </div>
-              {grupo.itens.map((item, i) => (
-                <div key={i} className="px-5 py-4 flex items-center justify-between"
-                  style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                  <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
-                  <div className="text-right ml-4">
-                    {editando === item.nome ? (
-                      <div className="flex items-center gap-1 justify-end">
-                        <input type="number" value={editInput}
-                          onChange={e => setEditInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
-                          autoFocus
-                          className="w-16 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
-                          style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
-                        <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
-                        <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
-                        <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 justify-end">
-                        <p className="font-semibold text-base"
-                          style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
-                          {item.compra}
-                        </p>
-                        <button onClick={() => iniciarEdit(item.nome, item.brutoKg)}
-                          className="text-base opacity-40 hover:opacity-80 transition-opacity"
-                          style={{ color: '#7BA892', lineHeight: 1 }}>✎</button>
-                      </div>
-                    )}
-                  </div>
+          {grupos.map(grupo => {
+            const custoSetor = grupo.itens.reduce((sum, item) => {
+              const c = custoItem(item.nome, overrides[item.nome] ?? item.brutoKg)
+              return sum + (c ?? 0)
+            }, 0)
+            const temCustoSetor = grupo.itens.some(item => precos[item.nome])
+            return (
+              <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
+                  <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>{grupo.setor}</p>
+                  {temCustoSetor && (
+                    <p className="text-xs font-semibold" style={{ color: '#128C7E' }}>
+                      R$ {custoSetor.toFixed(2).replace('.', ',')}
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
-          ))}
+                {grupo.itens.map((item, i) => {
+                  const bruto = overrides[item.nome] ?? item.brutoKg
+                  const custo = custoItem(item.nome, bruto)
+                  return (
+                    <div key={i} className="px-5 py-3.5"
+                      style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
+                        <div className="text-right ml-4">
+                          {editando === item.nome ? (
+                            <div className="flex items-center gap-1 justify-end">
+                              <input type="number" value={editInput}
+                                onChange={e => setEditInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
+                                autoFocus
+                                className="w-16 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
+                                style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
+                              <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
+                              <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
+                              <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <p className="font-semibold text-base"
+                                style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
+                                {item.compra}
+                              </p>
+                              <button onClick={() => iniciarEdit(item.nome, item.brutoKg)}
+                                className="text-base opacity-40 hover:opacity-80 transition-opacity"
+                                style={{ color: '#7BA892', lineHeight: 1 }}>✎</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <div />
+                        {editandoPreco === item.nome ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
+                            <input type="number" value={editPrecoInput}
+                              onChange={e => setEditPrecoInput(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') confirmarEditPreco(); if (e.key === 'Escape') setEditandoPreco(null) }}
+                              autoFocus placeholder="preço/kg"
+                              className="w-20 text-right text-xs outline-none rounded-lg px-2 py-0.5"
+                              style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
+                            <span className="text-xs" style={{ color: '#7BA892' }}>/kg</span>
+                            <button onClick={confirmarEditPreco} className="font-bold text-xs" style={{ color: '#128C7E' }}>✓</button>
+                            <button onClick={() => setEditandoPreco(null)} className="text-xs" style={{ color: '#7BA892' }}>×</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => iniciarEditPreco(item.nome)}
+                            className="text-xs"
+                            style={{ color: custo !== null ? '#128C7E' : '#C8E4D4' }}>
+                            {custo !== null
+                              ? `R$ ${custo.toFixed(2).replace('.', ',')}`
+                              : '+ preço'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
 
           {/* Resumo */}
           <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
@@ -262,12 +345,38 @@ export default function ListaComprasPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span style={{ color: '#5A7A68' }}>Dias planejados</span>
-                <span style={{ color: '#1A2E25' }}>{diasComPratos} de {estadia.numeroDias}</span>
+                <span style={{ color: '#1A2E25' }}>{diasComPratos} de {estadia.numero_dias}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span style={{ color: '#5A7A68' }}>Cenário</span>
                 <span className="font-medium" style={{ color: '#128C7E' }}>{nomeCenario}</span>
               </div>
+              {(() => {
+                const totalCusto = itensList.reduce((sum, item) => {
+                  const c = custoItem(item.nome, overrides[item.nome] ?? item.brutoKg)
+                  return sum + (c ?? 0)
+                }, 0)
+                const itensComPreco = itensList.filter(item => precos[item.nome]).length
+                if (itensComPreco === 0) return null
+                return (
+                  <>
+                    <div style={{ borderTop: '1px solid #E4F2EA', marginTop: 8, paddingTop: 8 }} />
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: '#5A7A68' }}>
+                        Custo estimado
+                        {itensComPreco < totalItens && (
+                          <span className="ml-1 text-xs" style={{ color: '#7BA892' }}>
+                            ({itensComPreco}/{totalItens} ingredientes)
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-bold text-base" style={{ color: '#1A2E25' }}>
+                        R$ {totalCusto.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           </div>
 

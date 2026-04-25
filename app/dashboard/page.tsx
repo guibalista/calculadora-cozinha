@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 interface Estadia {
   id: string; nome: string
   homens: number; mulheres: number; criancas: number
-  numeroDias: number; dataInicio?: string; dataFim?: string
+  numero_dias: number; data_inicio?: string; data_fim?: string
 }
 
 function saudacao(): string {
@@ -20,27 +21,58 @@ function dataHoje(): string {
 }
 
 function periodo(e: Estadia): string {
-  if (e.dataInicio && e.dataFim) {
-    const ini = new Date(e.dataInicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-    const fim = new Date(e.dataFim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  if (e.data_inicio && e.data_fim) {
+    const ini = new Date(e.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    const fim = new Date(e.data_fim + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     return `${ini} – ${fim}`
   }
-  return `${e.numeroDias} dia${e.numeroDias !== 1 ? 's' : ''}`
+  return `${e.numero_dias} dia${e.numero_dias !== 1 ? 's' : ''}`
 }
 
 export default function DashboardPage() {
   const [estadias, setEstadias] = useState<Estadia[]>([])
   const [deletando, setDeletando] = useState<string | null>(null)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    setEstadias(JSON.parse(localStorage.getItem('estadias') || '[]'))
+    async function carregar() {
+      const { data } = await supabase
+        .from('estadias')
+        .select('id, nome, homens, mulheres, criancas, numero_dias, data_inicio, data_fim')
+        .order('created_at', { ascending: false })
+      setEstadias(data ?? [])
+      setCarregando(false)
+    }
+    carregar()
   }, [])
 
-  function deletar(id: string) {
-    const atualizadas = estadias.filter(e => e.id !== id)
-    localStorage.setItem('estadias', JSON.stringify(atualizadas))
-    setEstadias(atualizadas)
+  async function deletar(id: string) {
+    await supabase.from('estadias').delete().eq('id', id)
+    setEstadias(prev => prev.filter(e => e.id !== id))
     setDeletando(null)
+  }
+
+  async function duplicar(id: string) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: original } = await supabase
+      .from('estadias')
+      .select('nome, homens, mulheres, criancas, numero_dias, dias')
+      .eq('id', id)
+      .single()
+    if (!original) return
+    const novoId = Date.now().toString()
+    const { data: inserido } = await supabase.from('estadias').insert({
+      id: novoId,
+      user_id: user.id,
+      nome: `${original.nome} (cópia)`,
+      homens: original.homens,
+      mulheres: original.mulheres,
+      criancas: original.criancas,
+      numero_dias: original.numero_dias,
+      dias: original.dias,
+    }).select('id, nome, homens, mulheres, criancas, numero_dias, data_inicio, data_fim').single()
+    if (inserido) setEstadias(prev => [inserido as Estadia, ...prev])
   }
 
   const total = estadias.length
@@ -48,13 +80,12 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen max-w-2xl mx-auto px-5 py-8" style={{ background: '#F0F7F2' }}>
 
-      {/* Header compacto com CTA inline */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <p className="text-xs font-medium mb-0.5 capitalize" style={{ color: '#7BA892' }}>{dataHoje()}</p>
           <h1 className="text-2xl font-bold leading-tight" style={{ color: '#1A2E25' }}>{saudacao()}</h1>
           <p className="text-sm mt-0.5" style={{ color: '#5A7A68' }}>
-            {total === 0 ? 'Nenhum planejamento ainda' : `${total} planejamento${total !== 1 ? 's' : ''} salvo${total !== 1 ? 's' : ''}`}
+            {carregando ? 'Carregando...' : total === 0 ? 'Nenhum planejamento ainda' : `${total} planejamento${total !== 1 ? 's' : ''} salvo${total !== 1 ? 's' : ''}`}
           </p>
         </div>
         <Link href="/estadia/nova"
@@ -67,7 +98,12 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {total === 0 ? (
+      {carregando ? (
+        <div className="flex justify-center py-20">
+          <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+        </div>
+      ) : total === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-16 h-16 rounded-3xl mb-5 flex items-center justify-center" style={{ background: '#E8F5EE' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -114,9 +150,19 @@ export default function DashboardPage() {
                       <Link href={`/estadia/${e.id}`} className="flex-1 min-w-0">
                         <p className="font-semibold text-sm leading-tight truncate" style={{ color: '#1A2E25' }}>{e.nome}</p>
                       </Link>
-                      <button onClick={() => setDeletando(e.id)}
-                        className="text-base leading-none flex-shrink-0 opacity-30 hover:opacity-70"
-                        style={{ color: '#5A7A68' }}>×</button>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => duplicar(e.id)}
+                          className="opacity-30 hover:opacity-70"
+                          title="Duplicar">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="#5A7A68" strokeWidth="2"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="#5A7A68" strokeWidth="2"/>
+                          </svg>
+                        </button>
+                        <button onClick={() => setDeletando(e.id)}
+                          className="text-base leading-none opacity-30 hover:opacity-70"
+                          style={{ color: '#5A7A68' }}>×</button>
+                      </div>
                     </div>
                     <Link href={`/estadia/${e.id}`}>
                       <p className="text-xs font-medium mb-1" style={{ color: '#128C7E' }}>{periodo(e)}</p>
@@ -131,12 +177,10 @@ export default function DashboardPage() {
             )
           })}
 
-          {/* Card de novo planejamento no grid */}
           <Link href="/estadia/nova"
             className="flex flex-col items-center justify-center p-4 rounded-3xl"
             style={{ border: '1.5px dashed #C8E4D4', background: 'transparent', minHeight: 120 }}>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2"
-              style={{ background: '#E8F5EE' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2" style={{ background: '#E8F5EE' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="#128C7E" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
@@ -145,7 +189,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
-
     </main>
   )
 }
