@@ -30,10 +30,18 @@ function periodo(e: Estadia): string {
 
 export default function DashboardPage() {
   const [estadias, setEstadias] = useState<Estadia[]>([])
+  const [deletando, setDeletando] = useState<string | null>(null)
 
   useEffect(() => {
     setEstadias(JSON.parse(localStorage.getItem('estadias') || '[]'))
   }, [])
+
+  function deletar(id: string) {
+    const atualizadas = estadias.filter(e => e.id !== id)
+    localStorage.setItem('estadias', JSON.stringify(atualizadas))
+    setEstadias(atualizadas)
+    setDeletando(null)
+  }
 
   const total = estadias.length
 
@@ -86,21 +94,40 @@ export default function DashboardPage() {
             ].filter(Boolean).join(' ')
 
             return (
-              <Link key={e.id} href={`/estadia/${e.id}`}
-                className="flex flex-col justify-between p-4 rounded-3xl"
-                style={{ background: '#fff', border: '1.5px solid #D4EDE0', minHeight: 120 }}>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <p className="font-semibold text-sm leading-tight" style={{ color: '#1A2E25' }}>{e.nome}</p>
-                  <span style={{ color: '#C8E4D4', fontSize: 16, flexShrink: 0 }}>→</span>
-                </div>
-                <div>
-                  <p className="text-xs font-medium mb-1" style={{ color: '#128C7E' }}>{periodo(e)}</p>
-                  <p className="text-xs" style={{ color: '#7BA892' }}>
-                    {totalP} hóspede{totalP !== 1 ? 's' : ''}
-                    {partes ? ` · ${partes}` : ''}
-                  </p>
-                </div>
-              </Link>
+              <div key={e.id} className="flex flex-col justify-between p-4 rounded-3xl relative"
+                style={{ background: '#fff', border: deletando === e.id ? '1.5px solid #E8A090' : '1.5px solid #D4EDE0', minHeight: 120 }}>
+                {deletando === e.id ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3 py-2">
+                    <p className="text-xs font-semibold text-center" style={{ color: '#1A2E25' }}>Apagar planejamento?</p>
+                    <div className="flex gap-2 w-full">
+                      <button onClick={() => setDeletando(null)}
+                        className="flex-1 py-2 rounded-xl text-xs font-semibold"
+                        style={{ border: '1.5px solid #D4EDE0', color: '#5A7A68' }}>Cancelar</button>
+                      <button onClick={() => deletar(e.id)}
+                        className="flex-1 py-2 rounded-xl text-xs font-semibold"
+                        style={{ background: '#E8A090', color: '#fff' }}>Apagar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <Link href={`/estadia/${e.id}`} className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm leading-tight truncate" style={{ color: '#1A2E25' }}>{e.nome}</p>
+                      </Link>
+                      <button onClick={() => setDeletando(e.id)}
+                        className="text-base leading-none flex-shrink-0 opacity-30 hover:opacity-70"
+                        style={{ color: '#5A7A68' }}>×</button>
+                    </div>
+                    <Link href={`/estadia/${e.id}`}>
+                      <p className="text-xs font-medium mb-1" style={{ color: '#128C7E' }}>{periodo(e)}</p>
+                      <p className="text-xs" style={{ color: '#7BA892' }}>
+                        {totalP} hóspede{totalP !== 1 ? 's' : ''}
+                        {partes ? ` · ${partes}` : ''}
+                      </p>
+                    </Link>
+                  </>
+                )}
+              </div>
             )
           })}
 

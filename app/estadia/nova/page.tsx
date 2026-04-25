@@ -125,9 +125,9 @@ export default function NovaEstadiaPage() {
       <div className="bg-white rounded-3xl px-5 mb-6" style={{ border: '1.5px solid #D4EDE0' }}>
         <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#1A2E25' }}>Hóspedes</p>
         <p className="text-sm pb-2" style={{ color: '#5A7A68' }}>Quem fica durante toda a estadia</p>
-        <ContadorPessoas label="Homens" sublabel="Porção completa" value={homens} onChange={setHomens} />
-        <ContadorPessoas label="Mulheres" sublabel="Porção reduzida" value={mulheres} onChange={setMulheres} />
-        <ContadorPessoas label="Crianças" sublabel="Meia porção" value={criancas} onChange={setCriancas} />
+        <ContadorPessoas label="Homens" sublabel="Adulto" value={homens} onChange={setHomens} />
+        <ContadorPessoas label="Mulheres" sublabel="Adulta" value={mulheres} onChange={setMulheres} />
+        <ContadorPessoas label="Crianças" sublabel="Até 12 anos" value={criancas} onChange={setCriancas} />
         {totalPessoas > 0 && (
           <p className="text-sm py-4 font-medium" style={{ color: '#7BA892' }}>
             {totalPessoas} pessoa{totalPessoas > 1 ? 's' : ''}

@@ -15,20 +15,25 @@ export async function POST(req: NextRequest) {
       max_tokens: 256,
       messages: [{
         role: 'user',
-        content: `Você é um especialista em gastronomia brasileira e ficha técnica de cozinha profissional.
+        content: `Você é especialista em planejamento de refeições para casas de aluguel de temporada no Brasil (como Airbnb, casas em Trancoso, chalés).
 
-Para o ingrediente "${nome}", retorne APENAS um JSON válido com este formato exato:
+O contexto é: família ou grupo de amigos em férias, cozinha doméstica, não restaurante profissional.
+
+Para o ingrediente "${nome}", retorne APENAS um JSON válido:
 {
-  "percapitaGramas": <número inteiro - gramas por pessoa adulta em uma refeição principal>,
-  "fatorCorrecao": <número decimal - fator FC para compra considerando perdas e aparas, ex: 1.25>,
-  "categoria": <uma das opções: "proteina", "vegetal", "fruta", "carboidrato", "laticinios", "tempero", "bebida", "padaria">
+  "percapitaGramas": <inteiro - gramas cruas por pessoa adulta numa refeição doméstica casual>,
+  "fatorCorrecao": <decimal - fator de perda para compra doméstica. Cortes limpos = 1.05-1.15. Vegetais = 1.10-1.25. Peixes inteiros = 1.40-1.60. Nunca acima de 1.80>,
+  "categoria": <"proteina" | "vegetal" | "fruta" | "carboidrato" | "laticinios" | "tempero" | "bebida" | "padaria">
 }
 
-Regras:
-- percapitaGramas: quantidade crua por pessoa em uma refeição (não aperitivo)
-- fatorCorrecao: quanto comprar a mais por perdas (1.00 = sem perda, 1.30 = 30% de perda)
-- Use conhecimento técnico de cozinha profissional brasileira
-- Responda APENAS o JSON, sem texto adicional`
+Exemplos de referência doméstica:
+- Frango filé: 200g, FC 1.15
+- Picanha: 280g, FC 1.20
+- Queijo gouda: 50g, FC 1.00
+- Arroz: 80g, FC 1.00
+- Abobrinha: 100g, FC 1.10
+
+Responda APENAS o JSON, sem texto adicional.`
       }]
     })
 
