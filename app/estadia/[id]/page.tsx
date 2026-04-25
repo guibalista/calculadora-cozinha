@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { buscarIngrediente, buscarIngredienteIA, type Ingrediente } from '@/lib/ingredientes-db'
@@ -19,12 +19,14 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
   const [gramas, setGramas] = useState('')
   const [buscandoIA, setBuscandoIA] = useState(false)
   const [veioDaIA, setVeioDaIA] = useState(false)
-  const timerRef = { current: null as ReturnType<typeof setTimeout> | null }
+  const [padrao, setPadrao] = useState<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function buscar(v: string) {
     setTermo(v)
     setSelecionado(null)
     setVeioDaIA(false)
+    setPadrao(null)
     if (timerRef.current) clearTimeout(timerRef.current)
 
     if (v.length < 2) { setSugestoes([]); return }
@@ -39,17 +41,20 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
         setSugestoes([ing])
         setVeioDaIA(true)
         setBuscandoIA(false)
-      }, 600)
+      }, 500)
     }
   }
 
   function selecionar(ing: Ingrediente) {
-    setSelecionado(ing); setTermo(ing.nome); setGramas(String(ing.percapitaGramas)); setSugestoes([])
+    setSelecionado(ing); setTermo(ing.nome)
+    setGramas(String(ing.percapitaGramas))
+    setPadrao(ing.percapitaGramas)
+    setSugestoes([])
   }
   function confirmar() {
     if (!selecionado || !gramas) return
     onAdicionar({ nome: selecionado.nome, gramasPorPessoa: parseFloat(gramas), fc: selecionado.fatorCorrecao, fcc: selecionado.fatorCoccao, categoria: selecionado.categoria })
-    setTermo(''); setSelecionado(null); setGramas(''); setVeioDaIA(false)
+    setTermo(''); setSelecionado(null); setGramas(''); setVeioDaIA(false); setPadrao(null)
   }
 
   return (
@@ -85,22 +90,30 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
         )}
       </div>
       {selecionado && (
-        <div className="flex items-center gap-2 p-3 rounded-2xl" style={{ background: '#E8F5EE' }}>
-          <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
-              className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-              style={{ border: '1.5px solid #C8E4D4', background: '#fff' }}>−</button>
-            <input type="number" value={gramas} onChange={e => setGramas(e.target.value)}
-              className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
-            <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
-            <button onClick={() => setGramas(v => String(parseFloat(v || '0') + 10))}
-              className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-              style={{ background: '#128C7E', color: '#fff' }}>+</button>
+        <div className="p-3 rounded-2xl space-y-2" style={{ background: '#E8F5EE' }}>
+          <div className="flex items-center gap-2">
+            <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
+                className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+                style={{ border: '1.5px solid #C8E4D4', background: '#fff' }}>−</button>
+              <input type="number" value={gramas} onChange={e => setGramas(e.target.value)}
+                className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
+              <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
+              <button onClick={() => setGramas(v => String(parseFloat(v || '0') + 10))}
+                className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
+                style={{ background: '#128C7E', color: '#fff' }}>+</button>
+            </div>
+            <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
+              Adicionar
+            </button>
           </div>
-          <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
-            Adicionar
-          </button>
+          {padrao !== null && parseFloat(gramas) !== padrao && (
+            <p className="text-xs" style={{ color: '#7BA892' }}>
+              padrão: {padrao}g/p ·{' '}
+              <button onClick={() => setGramas(String(padrao))} className="underline">restaurar</button>
+            </p>
+          )}
         </div>
       )}
     </div>
