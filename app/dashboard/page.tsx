@@ -46,6 +46,11 @@ export default function DashboardPage() {
     carregar()
   }, [])
 
+  async function sair() {
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
+
   async function deletar(id: string) {
     await supabase.from('estadias').delete().eq('id', id)
     setEstadias(prev => prev.filter(e => e.id !== id))
@@ -88,14 +93,21 @@ export default function DashboardPage() {
             {carregando ? 'Carregando...' : total === 0 ? 'Nenhum planejamento ainda' : `${total} planejamento${total !== 1 ? 's' : ''} salvo${total !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <Link href="/estadia/nova"
-          className="flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm flex-shrink-0"
-          style={{ background: '#128C7E', color: '#fff' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-          </svg>
-          Novo
-        </Link>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={sair}
+            className="px-3 py-3 rounded-2xl text-sm font-medium"
+            style={{ border: '1.5px solid #D4EDE0', color: '#7BA892', background: '#fff' }}>
+            Sair
+          </button>
+          <Link href="/estadia/nova"
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm"
+            style={{ background: '#128C7E', color: '#fff' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+            Novo
+          </Link>
+        </div>
       </div>
 
       {carregando ? (

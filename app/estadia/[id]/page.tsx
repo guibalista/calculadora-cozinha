@@ -10,8 +10,25 @@ import { formatarPeso } from '@/lib/lista-compras'
 
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; fcc: number; categoria: string }
 interface Prato { id: string; nome: string; ingredientes: IngPrato[] }
-interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
-interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numero_dias: number; dias: Dia[] }
+interface Dia { indice: number; label: string; data?: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
+interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numero_dias: number; data_inicio?: string; data_fim?: string; dias: Dia[] }
+type SugestaoIA = { nome: string; tipo: string; ingredientes: IngPrato[] }
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+function gerarDias(dataInicio: string, dataFim: string): Dia[] {
+  const inicio = new Date(dataInicio + 'T12:00:00')
+  const fim = new Date(dataFim + 'T12:00:00')
+  const dias: Dia[] = []
+  const atual = new Date(inicio)
+  while (atual <= fim) {
+    const d = DIAS_SEMANA[atual.getDay()]
+    const dd = atual.getDate().toString().padStart(2, '0')
+    const mm = (atual.getMonth() + 1).toString().padStart(2, '0')
+    dias.push({ indice: dias.length, label: `${d} ${dd}/${mm}`, data: atual.toISOString().split('T')[0], pratos: [], extrasHomens: 0, extrasMulheres: 0, extrasCriancas: 0 })
+    atual.setDate(atual.getDate() + 1)
+  }
+  return dias
+}
 
 function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => void }) {
   const [termo, setTermo] = useState('')
@@ -132,10 +149,18 @@ export default function EstadiaPage() {
   const [sugestoesReceita, setSugestoesReceita] = useState<Receita[]>([])
   const [receitaDaBase, setReceitaDaBase] = useState(false)
 
-  type SugestaoIA = { nome: string; tipo: string; ingredientes: IngPrato[] }
   const [sugestoesIA, setSugestoesIA] = useState<SugestaoIA[]>([])
   const [carregandoIA, setCarregandoIA] = useState(false)
   const [mostrandoSugestoes, setMostrandoSugestoes] = useState(false)
+  const [salvou, setSalvou] = useState(false)
+
+  const [editandoEstadia, setEditandoEstadia] = useState(false)
+  const [editNome, setEditNome] = useState('')
+  const [editHomens, setEditHomens] = useState(0)
+  const [editMulheres, setEditMulheres] = useState(0)
+  const [editCriancas, setEditCriancas] = useState(0)
+  const [editDataInicio, setEditDataInicio] = useState('')
+  const [editDataFim, setEditDataFim] = useState('')
 
   useEffect(() => {
     async function carregar() {
@@ -193,11 +218,72 @@ export default function EstadiaPage() {
 
   function adicionarSugestao(sugestao: SugestaoIA) {
     if (!estadia) return
-    const novo = { id: Date.now().toString(), nome: sugestao.nome, ingredientes: sugestao.ingredientes }
+    const ingsEnriquecidos = sugestao.ingredientes.map(ing => {
+      const local = buscarIngrediente(ing.nome)[0]
+      return { ...ing, fc: local?.fatorCorrecao ?? 1.10, fcc: local?.fatorCoccao ?? 1.0 }
+    })
+    const novo = { id: Date.now().toString(), nome: sugestao.nome, ingredientes: ingsEnriquecidos }
     const nova = { ...estadia, dias: estadia.dias.map((d, i) => i === diaAtivo ? { ...d, pratos: [...d.pratos, novo] } : d) }
     salvar(nova)
     setMostrandoSugestoes(false)
     setSugestoesIA([])
+    setSalvou(true); setTimeout(() => setSalvou(false), 2000)
+  }
+
+  function abrirEditar() {
+    if (!estadia) return
+    setEditNome(estadia.nome)
+    setEditHomens(estadia.homens)
+    setEditMulheres(estadia.mulheres)
+    setEditCriancas(estadia.criancas)
+    setEditDataInicio(estadia.data_inicio ?? '')
+    setEditDataFim(estadia.data_fim ?? '')
+    setEditandoEstadia(true)
+  }
+
+  async function salvarEdicao() {
+    if (!estadia || !editNome) return
+    const numeroDias = editDataInicio && editDataFim
+      ? Math.max(1, Math.round((new Date(editDataFim + 'T12:00:00').getTime() - new Date(editDataInicio + 'T12:00:00').getTime()) / 86400000) + 1)
+      : estadia.numero_dias
+
+    let diasNovos = estadia.dias
+    if (editDataInicio && editDataFim && (editDataInicio !== estadia.data_inicio || editDataFim !== estadia.data_fim)) {
+      const gerados = gerarDias(editDataInicio, editDataFim)
+      diasNovos = gerados.map((d, i) => ({
+        ...d,
+        pratos: estadia.dias[i]?.pratos ?? [],
+        extrasHomens: estadia.dias[i]?.extrasHomens ?? 0,
+        extrasMulheres: estadia.dias[i]?.extrasMulheres ?? 0,
+        extrasCriancas: estadia.dias[i]?.extrasCriancas ?? 0,
+      }))
+    }
+
+    const atualizada: Estadia = {
+      ...estadia,
+      nome: editNome,
+      homens: editHomens,
+      mulheres: editMulheres,
+      criancas: editCriancas,
+      numero_dias: numeroDias,
+      data_inicio: editDataInicio || undefined,
+      data_fim: editDataFim || undefined,
+      dias: diasNovos,
+    }
+
+    await supabase.from('estadias').update({
+      nome: editNome,
+      homens: editHomens,
+      mulheres: editMulheres,
+      criancas: editCriancas,
+      numero_dias: numeroDias,
+      data_inicio: editDataInicio || null,
+      data_fim: editDataFim || null,
+      dias: diasNovos,
+    }).eq('id', estadia.id)
+
+    setEstadia(atualizada)
+    setEditandoEstadia(false)
   }
 
   function removerIngrediente(idx: number) {
@@ -216,6 +302,7 @@ export default function EstadiaPage() {
     const nova = { ...estadia, dias: estadia.dias.map((d, i) => i === diaAtivo ? { ...d, pratos: [...d.pratos, novo] } : d) }
     salvar(nova)
     cancelarPrato()
+    setSalvou(true); setTimeout(() => setSalvou(false), 2000)
   }
 
   function removerPrato(pratoId: string) {
@@ -247,9 +334,20 @@ export default function EstadiaPage() {
 
   return (
     <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
+
+      {salvou && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg"
+          style={{ background: '#128C7E', color: '#fff' }}>
+          Refeição salva
+        </div>
+      )}
+
       {/* Cabeçalho */}
       <div className="px-5 pt-8 pb-4">
-        <Link href="/dashboard" className="text-sm font-medium block mb-5" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <div className="flex items-center justify-between mb-5">
+          <Link href="/dashboard" className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
+          <button onClick={abrirEditar} className="text-sm font-medium" style={{ color: '#7BA892' }}>Editar</button>
+        </div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#1A2E25' }}>{estadia.nome}</h1>
@@ -492,6 +590,89 @@ export default function EstadiaPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {editandoEstadia && (
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(26,46,37,0.5)' }}
+          onClick={() => setEditandoEstadia(false)}>
+          <div className="mt-auto rounded-t-3xl max-h-[90vh] overflow-y-auto"
+            style={{ background: '#F0F7F2' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0" style={{ background: '#F0F7F2' }}>
+              <p className="font-bold text-base" style={{ color: '#1A2E25' }}>Editar estadia</p>
+              <button onClick={() => setEditandoEstadia(false)} className="text-2xl leading-none" style={{ color: '#5A7A68' }}>×</button>
+            </div>
+
+            <div className="px-5 pb-8 space-y-4">
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>Nome</label>
+                <input type="text" value={editNome} onChange={e => setEditNome(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl border text-base outline-none"
+                  style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+              </div>
+
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                <p className="font-medium text-sm mb-4" style={{ color: '#1A2E25' }}>Período</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#7BA892' }}>Check-in</label>
+                    <input type="date" value={editDataInicio}
+                      onChange={e => { setEditDataInicio(e.target.value); if (editDataFim && e.target.value > editDataFim) setEditDataFim('') }}
+                      className="w-full px-3 py-3 rounded-2xl border text-sm outline-none"
+                      style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#7BA892' }}>Check-out</label>
+                    <input type="date" value={editDataFim} min={editDataInicio}
+                      onChange={e => setEditDataFim(e.target.value)}
+                      className="w-full px-3 py-3 rounded-2xl border text-sm outline-none"
+                      style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+                  </div>
+                </div>
+                {editDataInicio && editDataFim && editDataInicio !== estadia.data_inicio && (
+                  <p className="text-xs mt-3 px-3 py-2 rounded-xl" style={{ background: '#FEF9E7', color: '#92610A' }}>
+                    As datas serão atualizadas. Refeições existentes são mantidas por posição do dia.
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+                <p className="font-medium text-sm mb-4" style={{ color: '#1A2E25' }}>Hóspedes</p>
+                {([
+                  { label: 'Homens', val: editHomens, set: setEditHomens },
+                  { label: 'Mulheres', val: editMulheres, set: setEditMulheres },
+                  { label: 'Crianças', val: editCriancas, set: setEditCriancas },
+                ] as const).map(({ label, val, set }) => (
+                  <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #E4F2EA' }}>
+                    <p className="text-sm font-medium" style={{ color: '#1A2E25' }}>{label}</p>
+                    <div className="flex items-center gap-4">
+                      <button type="button" onClick={() => set(Math.max(0, val - 1))}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
+                        style={{ border: '1.5px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
+                      <span className="w-6 text-center font-semibold" style={{ color: '#1A2E25' }}>{val}</span>
+                      <button type="button" onClick={() => set(val + 1)}
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
+                        style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setEditandoEstadia(false)}
+                  className="flex-1 py-4 rounded-2xl text-sm font-semibold"
+                  style={{ border: '1.5px solid #D4EDE0', color: '#5A7A68', background: '#fff' }}>
+                  Cancelar
+                </button>
+                <button onClick={salvarEdicao} disabled={!editNome}
+                  className="flex-1 py-4 rounded-2xl text-sm font-semibold disabled:opacity-40"
+                  style={{ background: '#128C7E', color: '#fff' }}>
+                  Salvar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

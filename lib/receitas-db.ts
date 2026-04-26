@@ -681,6 +681,300 @@ export const RECEITAS: Receita[] = [
       { ingrediente: 'Sal', gramasPorPessoa: 3 },
     ],
   },
+
+  // ─── CAFÉ DA MANHÃ COMPLETO ───────────────────────────────────
+
+  {
+    id: 'cafe-da-manha-completo',
+    nome: 'Café da manhã completo',
+    categoria: 'cafe_manha',
+    sinonimos: ['café completo', 'café da manhã', 'desjejum', 'pequeno almoço'],
+    ingredientes: [
+      { ingrediente: 'Pão de forma', gramasPorPessoa: 60 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 15 },
+      { ingrediente: 'Ovos', gramasPorPessoa: 60 },
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 30 },
+      { ingrediente: 'Presunto', gramasPorPessoa: 30 },
+      { ingrediente: 'Mamão', gramasPorPessoa: 100 },
+      { ingrediente: 'Banana', gramasPorPessoa: 80 },
+    ],
+  },
+
+  {
+    id: 'cuscuz-nordestino',
+    nome: 'Cuscuz nordestino',
+    categoria: 'cafe_manha',
+    sinonimos: ['cuscuz', 'cuscuz com ovo', 'cuscuz temperado'],
+    ingredientes: [
+      { ingrediente: 'Cuscuz', gramasPorPessoa: 80 },
+      { ingrediente: 'Ovos', gramasPorPessoa: 60 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 10 },
+      { ingrediente: 'Sal', gramasPorPessoa: 2 },
+    ],
+  },
+
+  {
+    id: 'beiju-tapioca',
+    nome: 'Beiju de tapioca',
+    categoria: 'cafe_manha',
+    sinonimos: ['beiju', 'tapioca simples', 'tapioca de manteiga'],
+    ingredientes: [
+      { ingrediente: 'Tapioca', gramasPorPessoa: 70 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 10 },
+      { ingrediente: 'Queijo coalho', gramasPorPessoa: 40 },
+    ],
+  },
+
+  {
+    id: 'vitamina-frutas',
+    nome: 'Vitamina de frutas',
+    categoria: 'cafe_manha',
+    sinonimos: ['vitamina', 'suco de frutas', 'smoothie', 'batido de fruta'],
+    ingredientes: [
+      { ingrediente: 'Banana', gramasPorPessoa: 100 },
+      { ingrediente: 'Mamão', gramasPorPessoa: 100 },
+      { ingrediente: 'Leite integral', gramasPorPessoa: 150 },
+      { ingrediente: 'Açúcar', gramasPorPessoa: 10 },
+    ],
+  },
+
+  {
+    id: 'omelete',
+    nome: 'Omelete',
+    categoria: 'cafe_manha',
+    sinonimos: ['omelette', 'omelete de queijo', 'omelete recheado'],
+    ingredientes: [
+      { ingrediente: 'Ovos', gramasPorPessoa: 120 },
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 30 },
+      { ingrediente: 'Tomate', gramasPorPessoa: 30 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 10 },
+      { ingrediente: 'Sal', gramasPorPessoa: 2 },
+    ],
+  },
+
+  // ─── PRATOS TÍPICOS NORDESTE / PRAIA ──────────────────────────
+
+  {
+    id: 'bobo-de-camarao',
+    nome: 'Bobó de camarão',
+    categoria: 'almoco',
+    sinonimos: ['bobó', 'bobó baiano', 'bobó de camarão baiano'],
+    ingredientes: [
+      { ingrediente: 'Camarão limpo', gramasPorPessoa: 200 },
+      { ingrediente: 'Mandioca', gramasPorPessoa: 150 },
+      { ingrediente: 'Leite de coco', gramasPorPessoa: 80 },
+      { ingrediente: 'Dendê', gramasPorPessoa: 10 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 50 },
+      { ingrediente: 'Alho', gramasPorPessoa: 8 },
+      { ingrediente: 'Coentro fresco', gramasPorPessoa: 8 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'escondidinho-camarao',
+    nome: 'Escondidinho de camarão',
+    categoria: 'almoco',
+    sinonimos: ['escondidinho', 'escondidinho de frutos do mar'],
+    ingredientes: [
+      { ingrediente: 'Camarão limpo', gramasPorPessoa: 150 },
+      { ingrediente: 'Mandioca', gramasPorPessoa: 200 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 40 },
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 40 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Alho', gramasPorPessoa: 8 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'ceviche',
+    nome: 'Ceviche',
+    categoria: 'entrada',
+    sinonimos: ['ceviche de peixe', 'ceviche de camarão', 'ceviche brasileiro'],
+    ingredientes: [
+      { ingrediente: 'Tilápia filé', gramasPorPessoa: 150 },
+      { ingrediente: 'Limão siciliano', gramasPorPessoa: 50 },
+      { ingrediente: 'Cebola roxa', gramasPorPessoa: 40 },
+      { ingrediente: 'Coentro fresco', gramasPorPessoa: 8 },
+      { ingrediente: 'Pimentão vermelho', gramasPorPessoa: 20 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+    ],
+  },
+
+  {
+    id: 'lagosta-grelhada',
+    nome: 'Lagosta grelhada',
+    categoria: 'jantar',
+    sinonimos: ['lagosta', 'lagosta ao alho', 'lagosta na manteiga'],
+    ingredientes: [
+      { ingrediente: 'Lagosta', gramasPorPessoa: 350 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 25 },
+      { ingrediente: 'Alho', gramasPorPessoa: 10 },
+      { ingrediente: 'Limão', gramasPorPessoa: 20 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'strogonoff-frango',
+    nome: 'Strogonoff de frango',
+    categoria: 'almoco',
+    sinonimos: ['estrogonofe', 'strogonoff', 'frango ao creme'],
+    ingredientes: [
+      { ingrediente: 'Frango peito s/ osso', gramasPorPessoa: 250 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 60 },
+      { ingrediente: 'Extrato de tomate', gramasPorPessoa: 20 },
+      { ingrediente: 'Cogumelos', gramasPorPessoa: 40 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 15 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'strogonoff-carne',
+    nome: 'Strogonoff de carne',
+    categoria: 'almoco',
+    sinonimos: ['strogonoff de filé', 'estrogonofe de carne', 'filé ao creme'],
+    ingredientes: [
+      { ingrediente: 'Filé mignon', gramasPorPessoa: 220 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 60 },
+      { ingrediente: 'Extrato de tomate', gramasPorPessoa: 20 },
+      { ingrediente: 'Cogumelos', gramasPorPessoa: 40 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 15 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  // ─── SOBREMESAS ───────────────────────────────────────────────
+
+  {
+    id: 'pudim-leite',
+    nome: 'Pudim de leite',
+    categoria: 'sobremesa',
+    sinonimos: ['pudim', 'pudim de leite condensado', 'pudim caseiro'],
+    ingredientes: [
+      { ingrediente: 'Leite condensado', gramasPorPessoa: 80 },
+      { ingrediente: 'Leite integral', gramasPorPessoa: 80 },
+      { ingrediente: 'Ovos', gramasPorPessoa: 40 },
+      { ingrediente: 'Açúcar', gramasPorPessoa: 30 },
+    ],
+  },
+
+  {
+    id: 'mousse-maracuja',
+    nome: 'Mousse de maracujá',
+    categoria: 'sobremesa',
+    sinonimos: ['mousse', 'mousse de maracujá', 'sobremesa de maracujá'],
+    ingredientes: [
+      { ingrediente: 'Leite condensado', gramasPorPessoa: 80 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 50 },
+      { ingrediente: 'Maracujá', gramasPorPessoa: 60 },
+    ],
+  },
+
+  {
+    id: 'pave-chocolate',
+    nome: 'Pavê de chocolate',
+    categoria: 'sobremesa',
+    sinonimos: ['pavê', 'pave', 'pavê gelado'],
+    ingredientes: [
+      { ingrediente: 'Biscoito champagne', gramasPorPessoa: 50 },
+      { ingrediente: 'Leite condensado', gramasPorPessoa: 80 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 50 },
+      { ingrediente: 'Achocolatado', gramasPorPessoa: 20 },
+    ],
+  },
+
+  // ─── SOPAS ────────────────────────────────────────────────────
+
+  {
+    id: 'sopa-legumes',
+    nome: 'Sopa de legumes',
+    categoria: 'jantar',
+    sinonimos: ['sopa de verduras', 'caldo de legumes', 'sopa simples'],
+    ingredientes: [
+      { ingrediente: 'Batata inglesa', gramasPorPessoa: 100 },
+      { ingrediente: 'Cenoura', gramasPorPessoa: 60 },
+      { ingrediente: 'Abobrinha', gramasPorPessoa: 60 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Alho', gramasPorPessoa: 6 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+    ],
+  },
+
+  {
+    id: 'caldo-verde',
+    nome: 'Caldo verde',
+    categoria: 'jantar',
+    sinonimos: ['caldo de couve', 'sopa caldo verde', 'caldo verde português'],
+    ingredientes: [
+      { ingrediente: 'Batata inglesa', gramasPorPessoa: 150 },
+      { ingrediente: 'Couve manteiga', gramasPorPessoa: 40 },
+      { ingrediente: 'Linguiça calabresa', gramasPorPessoa: 60 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Alho', gramasPorPessoa: 6 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+    ],
+  },
+
+  // ─── LANCHES / ENTRADAS ───────────────────────────────────────
+
+  {
+    id: 'tabua-frios',
+    nome: 'Tábua de frios',
+    categoria: 'entrada',
+    sinonimos: ['frios', 'tábua', 'queijos e frios', 'aperitivo'],
+    ingredientes: [
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 50 },
+      { ingrediente: 'Presunto', gramasPorPessoa: 40 },
+      { ingrediente: 'Salame', gramasPorPessoa: 30 },
+      { ingrediente: 'Queijo coalho', gramasPorPessoa: 40 },
+      { ingrediente: 'Pão francês', gramasPorPessoa: 50 },
+    ],
+  },
+
+  {
+    id: 'bruschetta',
+    nome: 'Bruschetta',
+    categoria: 'entrada',
+    sinonimos: ['torrada com tomate', 'bruscheta', 'pão com tomate'],
+    ingredientes: [
+      { ingrediente: 'Pão italiano', gramasPorPessoa: 60 },
+      { ingrediente: 'Tomate', gramasPorPessoa: 80 },
+      { ingrediente: 'Alho', gramasPorPessoa: 6 },
+      { ingrediente: 'Azeite de oliva', gramasPorPessoa: 15 },
+      { ingrediente: 'Manjericão', gramasPorPessoa: 5 },
+      { ingrediente: 'Sal', gramasPorPessoa: 2 },
+    ],
+  },
+
+  {
+    id: 'pao-de-alho',
+    nome: 'Pão de alho',
+    categoria: 'entrada',
+    sinonimos: ['pão alho', 'bread de alho', 'garlic bread'],
+    ingredientes: [
+      { ingrediente: 'Pão francês', gramasPorPessoa: 80 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 25 },
+      { ingrediente: 'Alho', gramasPorPessoa: 10 },
+      { ingrediente: 'Salsinha', gramasPorPessoa: 5 },
+    ],
+  },
+
+  {
+    id: 'mandioca-frita',
+    nome: 'Mandioca frita',
+    categoria: 'entrada',
+    sinonimos: ['macaxeira frita', 'aipim frito', 'mandioca crocante'],
+    ingredientes: [
+      { ingrediente: 'Mandioca', gramasPorPessoa: 200 },
+      { ingrediente: 'Óleo de soja', gramasPorPessoa: 30 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+    ],
+  },
 ]
 
 // ─── FUNÇÕES ──────────────────────────────────────────────────────────────────

@@ -120,7 +120,9 @@ export default function ListaComprasPage() {
           nome, categoria: v.categoria, brutoKg: v.bruto, liquidoKg: v.bruto,
           compra: converterParaCompra(nome, v.bruto),
         }))
-        return { titulo: dia.label, grupos: agruparPorSetor(itens) }
+        const totalDia = hospedes.homens + hospedes.mulheres + hospedes.criancas
+        const tituloComHospedes = `${dia.label}  ·  ${totalDia} pessoa${totalDia !== 1 ? 's' : ''}`
+        return { titulo: tituloComHospedes, grupos: agruparPorSetor(itens) }
       })
   }
 
