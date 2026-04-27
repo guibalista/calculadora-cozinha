@@ -179,14 +179,15 @@ function InputIngrediente({ onAdicionar, receitaNome }: { onAdicionar: (ing: Ing
   }
 
   function selecionar(ing: Ingrediente) {
-    setSelecionado(ing); setTermo(ing.nome)
+    setSelecionado(ing)
     setGramas(String(ing.percapitaGramas))
     setPadrao(ing.percapitaGramas)
     setSugestoes([])
   }
   function confirmar() {
     if (!selecionado || !gramas) return
-    onAdicionar({ nome: selecionado.nome, gramasPorPessoa: parseFloat(gramas), fc: selecionado.fatorCorrecao, fcc: selecionado.fatorCoccao, categoria: selecionado.categoria })
+    const nome = termo.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    onAdicionar({ nome, gramasPorPessoa: parseFloat(gramas), fc: selecionado.fatorCorrecao, fcc: selecionado.fatorCoccao, categoria: selecionado.categoria })
     setTermo(''); setSelecionado(null); setGramas(''); setVeioDaIA(false); setPadrao(null)
   }
 
@@ -225,7 +226,7 @@ function InputIngrediente({ onAdicionar, receitaNome }: { onAdicionar: (ing: Ing
       {selecionado && (
         <div className="p-3 rounded-2xl space-y-2" style={{ background: '#E8F5EE' }}>
           <div className="flex items-center gap-2">
-            <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{selecionado.nome}</span>
+            <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{termo || selecionado.nome}</span>
             <div className="flex items-center gap-1">
               <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
                 className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
