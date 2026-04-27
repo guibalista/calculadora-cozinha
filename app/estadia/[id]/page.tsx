@@ -30,7 +30,122 @@ function gerarDias(dataInicio: string, dataFim: string): Dia[] {
   return dias
 }
 
-function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => void }) {
+type ReceitaIAData = { nome: string; ingredientes: Array<{ nome: string; gramasPorPessoa: number; categoria: string }> }
+
+function InputReceita({
+  onChange,
+  onSelect,
+  hospedes,
+}: {
+  onChange: (v: string) => void
+  onSelect: (nome: string, ings: IngPrato[], fromIA: boolean) => void
+  hospedes: { homens: number; mulheres: number; criancas: number } | null
+}) {
+  const [termo, setTermo] = useState('')
+  const [sugestoes, setSugestoes] = useState<Receita[]>([])
+  const [buscandoIA, setBuscandoIA] = useState(false)
+  const [receitaIA, setReceitaIA] = useState<ReceitaIAData | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function buscar(v: string) {
+    setTermo(v)
+    onChange(v)
+    setReceitaIA(null)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (v.length < 2) { setSugestoes([]); return }
+
+    const locais = buscarReceita(v)
+    setSugestoes(locais)
+
+    if (locais.length === 0) {
+      timerRef.current = setTimeout(async () => {
+        setBuscandoIA(true)
+        try {
+          const res = await fetch('/api/refeicao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nome: v,
+              homens: hospedes?.homens ?? 0,
+              mulheres: hospedes?.mulheres ?? 0,
+              criancas: hospedes?.criancas ?? 0,
+            }),
+          })
+          const dados: ReceitaIAData = await res.json()
+          if (dados.nome && dados.ingredientes) setReceitaIA(dados)
+        } finally {
+          setBuscandoIA(false)
+        }
+      }, 500)
+    }
+  }
+
+  function selecionar(receita: Receita) {
+    const ings = resolverReceita(receita)
+    setTermo(receita.nome)
+    setSugestoes([])
+    setReceitaIA(null)
+    onSelect(receita.nome, ings, false)
+  }
+
+  function selecionarIA(r: ReceitaIAData) {
+    const ings: IngPrato[] = r.ingredientes.map(ing => {
+      const local = buscarIngrediente(ing.nome)[0]
+      return { nome: ing.nome, gramasPorPessoa: ing.gramasPorPessoa, fc: local?.fatorCorrecao ?? 1.10, fcc: local?.fatorCoccao ?? 1.0, categoria: ing.categoria }
+    })
+    setTermo(r.nome)
+    setSugestoes([])
+    setReceitaIA(null)
+    onSelect(r.nome, ings, true)
+  }
+
+  return (
+    <div className="mb-4 relative">
+      <input type="text" value={termo} onChange={e => buscar(e.target.value)}
+        placeholder="Nome da refeição (ex: Feijoada, Frango assado...)"
+        className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
+        style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+      {buscandoIA && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+        </div>
+      )}
+      {(sugestoes.length > 0 || receitaIA) && (
+        <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
+          style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+          {sugestoes.map(r => (
+            <button key={r.id}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => selecionar(r)}
+              className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
+              style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
+              <span className="font-medium">{r.nome}</span>
+              <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
+            </button>
+          ))}
+          {receitaIA && (
+            <>
+              <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
+                <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
+              </div>
+              <button
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => selecionarIA(receitaIA)}
+                className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
+                style={{ color: '#1A2E25' }}>
+                <span className="font-medium">{receitaIA.nome}</span>
+                <span className="text-xs" style={{ color: '#7BA892' }}>{receitaIA.ingredientes.length} ingredientes</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InputIngrediente({ onAdicionar, receitaNome }: { onAdicionar: (ing: IngPrato) => void; receitaNome?: string }) {
   const [termo, setTermo] = useState('')
   const [sugestoes, setSugestoes] = useState<Ingrediente[]>([])
   const [selecionado, setSelecionado] = useState<Ingrediente | null>(null)
@@ -55,7 +170,7 @@ function InputIngrediente({ onAdicionar }: { onAdicionar: (ing: IngPrato) => voi
     if (locais.length === 0) {
       timerRef.current = setTimeout(async () => {
         setBuscandoIA(true)
-        const ing = await buscarIngredienteIA(v)
+        const ing = await buscarIngredienteIA(v, receitaNome)
         setSugestoes([ing])
         setVeioDaIA(true)
         setBuscandoIA(false)
@@ -146,12 +261,8 @@ export default function EstadiaPage() {
   const [adicionandoPrato, setAdicionandoPrato] = useState(false)
   const [nomePrato, setNomePrato] = useState('')
   const [ingredientes, setIngredientes] = useState<IngPrato[]>([])
-  const [sugestoesReceita, setSugestoesReceita] = useState<Receita[]>([])
   const [receitaDaBase, setReceitaDaBase] = useState(false)
-  const [buscandoReceitaIA, setBuscandoReceitaIA] = useState(false)
-  const [receitaIA, setReceitaIA] = useState<{ nome: string; ingredientes: Array<{ nome: string; gramasPorPessoa: number; categoria: string }> } | null>(null)
   const [receitaVeioDaIA, setReceitaVeioDaIA] = useState(false)
-  const timerReceitaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [sugestoesIA, setSugestoesIA] = useState<SugestaoIA[]>([])
   const [carregandoIA, setCarregandoIA] = useState(false)
@@ -183,78 +294,22 @@ export default function EstadiaPage() {
     setEstadia(nova)
   }
 
-  function handleNomePrato(v: string) {
+  function handleChangeNome(v: string) {
     setNomePrato(v)
     setReceitaDaBase(false)
     setReceitaVeioDaIA(false)
-    setReceitaIA(null)
-    if (timerReceitaRef.current) clearTimeout(timerReceitaRef.current)
-
-    if (v.length < 2) { setSugestoesReceita([]); return }
-
-    const locais = buscarReceita(v)
-    setSugestoesReceita(locais)
-
-    if (locais.length === 0) {
-      timerReceitaRef.current = setTimeout(async () => {
-        setBuscandoReceitaIA(true)
-        try {
-          const res = await fetch('/api/refeicao', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nome: v,
-              homens: estadia?.homens ?? 0,
-              mulheres: estadia?.mulheres ?? 0,
-              criancas: estadia?.criancas ?? 0,
-            }),
-          })
-          const dados = await res.json()
-          if (dados.nome && dados.ingredientes) {
-            setReceitaIA(dados)
-            setReceitaVeioDaIA(true)
-          }
-        } finally {
-          setBuscandoReceitaIA(false)
-        }
-      }, 500)
-    }
   }
 
-  function selecionarReceita(receita: Receita) {
-    setNomePrato(receita.nome)
-    setIngredientes(resolverReceita(receita))
-    setReceitaDaBase(true)
-    setReceitaVeioDaIA(false)
-    setReceitaIA(null)
-    setSugestoesReceita([])
-  }
-
-  function selecionarReceitaIA(r: { nome: string; ingredientes: Array<{ nome: string; gramasPorPessoa: number; categoria: string }> }) {
-    setNomePrato(r.nome)
-    const ings: IngPrato[] = r.ingredientes.map(ing => {
-      const local = buscarIngrediente(ing.nome)[0]
-      return {
-        nome: ing.nome,
-        gramasPorPessoa: ing.gramasPorPessoa,
-        fc: local?.fatorCorrecao ?? 1.10,
-        fcc: local?.fatorCoccao ?? 1.0,
-        categoria: ing.categoria,
-      }
-    })
+  function handleSelectReceita(nome: string, ings: IngPrato[], fromIA: boolean) {
+    setNomePrato(nome)
     setIngredientes(ings)
-    setReceitaDaBase(false)
-    setReceitaVeioDaIA(true)
-    setReceitaIA(null)
-    setSugestoesReceita([])
+    setReceitaDaBase(!fromIA)
+    setReceitaVeioDaIA(fromIA)
   }
 
   function cancelarPrato() {
     setAdicionandoPrato(false); setNomePrato(''); setIngredientes([])
     setReceitaDaBase(false); setReceitaVeioDaIA(false)
-    setReceitaIA(null); setSugestoesReceita([])
-    if (timerReceitaRef.current) clearTimeout(timerReceitaRef.current)
-    setBuscandoReceitaIA(false)
   }
 
   async function buscarSugestoesIA() {
@@ -516,44 +571,11 @@ export default function EstadiaPage() {
           <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
             <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição</p>
 
-            <div className="mb-4 relative">
-              <input type="text" value={nomePrato} onChange={e => handleNomePrato(e.target.value)}
-                placeholder="Nome da refeição (ex: Feijoada, Frango assado...)"
-                className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-                style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
-              {buscandoReceitaIA && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-                    style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
-                </div>
-              )}
-              {(sugestoesReceita.length > 0 || receitaIA) && (
-                <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-                  style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
-                  {sugestoesReceita.map(r => (
-                    <button key={r.id} onClick={() => selecionarReceita(r)}
-                      className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                      style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
-                      <span className="font-medium">{r.nome}</span>
-                      <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
-                    </button>
-                  ))}
-                  {receitaIA && (
-                    <>
-                      <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
-                        <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
-                      </div>
-                      <button onClick={() => selecionarReceitaIA(receitaIA)}
-                        className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                        style={{ color: '#1A2E25' }}>
-                        <span className="font-medium">{receitaIA.nome}</span>
-                        <span className="text-xs" style={{ color: '#7BA892' }}>{receitaIA.ingredientes.length} ingredientes</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+            <InputReceita
+              onChange={handleChangeNome}
+              onSelect={handleSelectReceita}
+              hospedes={estadia}
+            />
 
             {(receitaDaBase || receitaVeioDaIA) && ingredientes.length > 0 && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#E8F5EE' }}>
@@ -585,7 +607,7 @@ export default function EstadiaPage() {
               </div>
             )}
 
-            <InputIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
+            <InputIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} receitaNome={nomePrato || undefined} />
 
             <div className="flex gap-3 mt-4">
               <button onClick={cancelarPrato}

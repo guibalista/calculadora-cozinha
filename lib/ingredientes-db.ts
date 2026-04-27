@@ -107,8 +107,8 @@ export const DB: Ingrediente[] = [
   { nome: 'Arroz integral', categoria: 'carboidrato', percapitaGramas: 80, fatorCorrecao: 1.00, fatorCoccao: 2.20, sinonimos: ['arroz integral'] },
   { nome: 'Feijão carioca', categoria: 'carboidrato', percapitaGramas: 70, fatorCorrecao: 1.00, fatorCoccao: 2.20, sinonimos: ['feijao', 'feijão', 'feijão carioca'] },
   { nome: 'Feijão preto', categoria: 'carboidrato', percapitaGramas: 80, fatorCorrecao: 1.00, fatorCoccao: 2.20, sinonimos: ['feijao preto', 'feijão preto'] },
-  { nome: 'Macarrão espaguete', categoria: 'carboidrato', percapitaGramas: 100, fatorCorrecao: 1.00, fatorCoccao: 2.30, sinonimos: ['macarrao', 'macarrão', 'espaguete', 'pasta'] },
-  { nome: 'Macarrão parafuso', categoria: 'carboidrato', percapitaGramas: 100, fatorCorrecao: 1.00, fatorCoccao: 2.20, sinonimos: ['parafuso', 'fusilli'] },
+  { nome: 'Macarrão espaguete', categoria: 'carboidrato', percapitaGramas: 100, fatorCorrecao: 1.00, fatorCoccao: 2.30, sinonimos: ['macarrao', 'macarrão', 'espaguete', 'pasta', 'fettuccine', 'fetuccine', 'tagliatelle', 'linguine', 'talharim', 'spaghetti', 'bavette'] },
+  { nome: 'Macarrão parafuso', categoria: 'carboidrato', percapitaGramas: 100, fatorCorrecao: 1.00, fatorCoccao: 2.20, sinonimos: ['parafuso', 'fusilli', 'rigatoni', 'penne', 'penne rigate', 'farfalle', 'conchiglie', 'gravatinha', 'ditali', 'tortiglioni'] },
   { nome: 'Pão de forma', categoria: 'padaria', percapitaGramas: 60, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['pao de forma', 'pão de forma', 'pão'] },
   { nome: 'Pão francês', categoria: 'padaria', percapitaGramas: 50, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['pao frances', 'pão francês', 'bisnaga'] },
   { nome: 'Tapioca', categoria: 'carboidrato', percapitaGramas: 60, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['tapioca', 'goma de tapioca'] },
@@ -258,25 +258,26 @@ function getCacheIA(nome: string): Ingrediente | null {
     return cache[norm(nome)] ?? null
   } catch { return null }
 }
-function setCacheIA(ing: Ingrediente) {
+function setCacheIA(ing: Ingrediente, key?: string) {
   if (typeof window === 'undefined') return
   try {
     const cache = JSON.parse(localStorage.getItem('ingredientes_ia_cache') || '{}')
-    cache[norm(ing.nome)] = ing
+    cache[key ?? norm(ing.nome)] = ing
     localStorage.setItem('ingredientes_ia_cache', JSON.stringify(cache))
   } catch {}
 }
 
 // Busca com IA — chama API quando ingrediente não está no banco local
-export async function buscarIngredienteIA(termo: string): Promise<Ingrediente> {
+export async function buscarIngredienteIA(termo: string, receitaNome?: string): Promise<Ingrediente> {
   const t = norm(termo)
 
   // 1. Banco local
   const local = DB.find(ing => norm(ing.nome).includes(t) || ing.sinonimos.map(norm).some(s => s.includes(t)))
   if (local) return local
 
-  // 2. Cache localStorage
-  const cached = getCacheIA(termo)
+  // 2. Cache localStorage (com chave que inclui contexto da receita)
+  const cacheKey = receitaNome ? `${norm(termo)}__${norm(receitaNome)}` : norm(termo)
+  const cached = getCacheIA(cacheKey)
   if (cached) return cached
 
   // 3. API Claude
@@ -284,7 +285,7 @@ export async function buscarIngredienteIA(termo: string): Promise<Ingrediente> {
     const res = await fetch('/api/ingrediente', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: termo }),
+      body: JSON.stringify({ nome: termo, receitaNome }),
     })
     if (res.ok) {
       const dados = await res.json()
@@ -296,7 +297,7 @@ export async function buscarIngredienteIA(termo: string): Promise<Ingrediente> {
         fatorCoccao: 1.00,
         sinonimos: [],
       }
-      setCacheIA(ing)
+      setCacheIA(ing, cacheKey)
       return ing
     }
   } catch {}
