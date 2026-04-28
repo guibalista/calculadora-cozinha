@@ -49,8 +49,9 @@ export const DB: Ingrediente[] = [
   { nome: 'Sardinha fresca', categoria: 'proteina', percapitaGramas: 200, fatorCorrecao: 1.50, fatorCoccao: 0.80, sinonimos: ['sardinha'] },
 
   // ─── FRUTOS DO MAR ────────────────────────────────────────
-  { nome: 'Camarão limpo', categoria: 'proteina', percapitaGramas: 200, fatorCorrecao: 1.10, fatorCoccao: 0.85, sinonimos: ['camarao', 'camarão', 'camarão limpo'] },
-  { nome: 'Camarão inteiro', categoria: 'proteina', percapitaGramas: 300, fatorCorrecao: 2.75, fatorCoccao: 0.85, sinonimos: ['camarao inteiro', 'camarão inteiro'] },
+  { nome: 'Camarão limpo', categoria: 'proteina', percapitaGramas: 200, fatorCorrecao: 1.10, fatorCoccao: 0.85, sinonimos: ['camarao', 'camarão', 'camarão limpo', 'camarao descascado'] },
+  { nome: 'Camarão inteiro', categoria: 'proteina', percapitaGramas: 300, fatorCorrecao: 2.75, fatorCoccao: 0.85, sinonimos: ['camarao inteiro', 'camarão inteiro', 'camarao com cabeca'] },
+  { nome: 'Camarão sem cabeça c/ casca', categoria: 'proteina', percapitaGramas: 250, fatorCorrecao: 1.58, fatorCoccao: 0.85, sinonimos: ['camarao sem cabeca', 'camarão sem cabeça', 'camarao congelado'] },
   { nome: 'Lula', categoria: 'proteina', percapitaGramas: 200, fatorCorrecao: 1.30, fatorCoccao: 0.80, sinonimos: ['lula'] },
   { nome: 'Polvo', categoria: 'proteina', percapitaGramas: 250, fatorCorrecao: 1.20, fatorCoccao: 0.65, sinonimos: ['polvo'] },
   { nome: 'Mariscos', categoria: 'proteina', percapitaGramas: 300, fatorCorrecao: 2.50, fatorCoccao: 0.40, sinonimos: ['marisco', 'mariscos', 'mexilhao', 'mexilhão'] },
