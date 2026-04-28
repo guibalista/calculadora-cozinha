@@ -18,6 +18,7 @@ const PALAVRAS_PEIXARIA = [
 
 export function setorMercado(nomeIngrediente: string, categoria: string): Setor {
   const n = nomeIngrediente.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  if (n.includes('ovo') || n.includes('ovos')) return 'Frios e Laticínios'
   if (categoria === 'proteina') {
     return PALAVRAS_PEIXARIA.some(p => n.includes(p)) ? 'Peixaria' : 'Açougue'
   }

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { buscarIngrediente, buscarIngredienteIA, type Ingrediente } from '@/lib/ingredientes-db'
-import { buscarReceita, resolverReceita, type Receita } from '@/lib/receitas-db'
+import { buscarReceita, resolverReceita, buscarReceitaComIA, type Receita, type ReceitaIAData } from '@/lib/receitas-db'
 import { totalEquivalente, somarHospedes } from '@/lib/percapita'
 import { formatarPeso } from '@/lib/lista-compras'
 
@@ -29,8 +29,6 @@ function gerarDias(dataInicio: string, dataFim: string): Dia[] {
   }
   return dias
 }
-
-type ReceitaIAData = { nome: string; ingredientes: Array<{ nome: string; gramasPorPessoa: number; categoria: string }> }
 
 function InputReceita({
   onChange,
@@ -57,27 +55,23 @@ function InputReceita({
     const locais = buscarReceita(v)
     setSugestoes(locais)
 
-    if (locais.length === 0) {
-      timerRef.current = setTimeout(async () => {
-        setBuscandoIA(true)
-        try {
-          const res = await fetch('/api/refeicao', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nome: v,
-              homens: hospedes?.homens ?? 0,
-              mulheres: hospedes?.mulheres ?? 0,
-              criancas: hospedes?.criancas ?? 0,
-            }),
-          })
-          const dados: ReceitaIAData = await res.json()
-          if (dados.nome && dados.ingredientes) setReceitaIA(dados)
-        } finally {
-          setBuscandoIA(false)
+    timerRef.current = setTimeout(async () => {
+      setBuscandoIA(true)
+      try {
+        const dados = await buscarReceitaComIA(v, {
+          homens: hospedes?.homens ?? 0,
+          mulheres: hospedes?.mulheres ?? 0,
+          criancas: hospedes?.criancas ?? 0,
+        })
+        if (dados) {
+          const nomeNorm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+          const jaExiste = locais.some(r => nomeNorm(r.nome) === nomeNorm(dados.nome))
+          if (!jaExiste) setReceitaIA(dados)
         }
-      }, 500)
-    }
+      } finally {
+        setBuscandoIA(false)
+      }
+    }, 400)
   }
 
   function selecionar(receita: Receita) {
@@ -180,6 +174,7 @@ function InputIngrediente({ onAdicionar, receitaNome }: { onAdicionar: (ing: Ing
 
   function selecionar(ing: Ingrediente) {
     setSelecionado(ing)
+    setTermo(ing.nome)
     setGramas(String(ing.percapitaGramas))
     setPadrao(ing.percapitaGramas)
     setSugestoes([])

@@ -386,7 +386,7 @@ export const RECEITAS: Receita[] = [
     ingredientes: [
       { ingrediente: 'Filé mignon', gramasPorPessoa: 220 },
       { ingrediente: 'Creme de leite', gramasPorPessoa: 50 },
-      { ingrediente: 'Cogumelos', gramasPorPessoa: 50 },
+      { ingrediente: 'Cogumelos Paris', gramasPorPessoa: 50 },
       { ingrediente: 'Manteiga', gramasPorPessoa: 15 },
       { ingrediente: 'Sal', gramasPorPessoa: 4 },
       { ingrediente: 'Pimenta-do-reino', gramasPorPessoa: 1 },
@@ -825,7 +825,7 @@ export const RECEITAS: Receita[] = [
       { ingrediente: 'Frango peito s/ osso', gramasPorPessoa: 250 },
       { ingrediente: 'Creme de leite', gramasPorPessoa: 60 },
       { ingrediente: 'Extrato de tomate', gramasPorPessoa: 20 },
-      { ingrediente: 'Cogumelos', gramasPorPessoa: 40 },
+      { ingrediente: 'Cogumelos Paris', gramasPorPessoa: 40 },
       { ingrediente: 'Cebola', gramasPorPessoa: 40 },
       { ingrediente: 'Manteiga', gramasPorPessoa: 15 },
       { ingrediente: 'Sal', gramasPorPessoa: 4 },
@@ -841,7 +841,7 @@ export const RECEITAS: Receita[] = [
       { ingrediente: 'Filé mignon', gramasPorPessoa: 220 },
       { ingrediente: 'Creme de leite', gramasPorPessoa: 60 },
       { ingrediente: 'Extrato de tomate', gramasPorPessoa: 20 },
-      { ingrediente: 'Cogumelos', gramasPorPessoa: 40 },
+      { ingrediente: 'Cogumelos Paris', gramasPorPessoa: 40 },
       { ingrediente: 'Cebola', gramasPorPessoa: 40 },
       { ingrediente: 'Manteiga', gramasPorPessoa: 15 },
       { ingrediente: 'Sal', gramasPorPessoa: 4 },
@@ -975,6 +975,213 @@ export const RECEITAS: Receita[] = [
       { ingrediente: 'Sal', gramasPorPessoa: 3 },
     ],
   },
+
+  // ─── MASSAS ADICIONAIS ────────────────────────────────────────
+
+  {
+    id: 'macarrao-molho-branco',
+    nome: 'Macarrão ao molho branco',
+    categoria: 'almoco',
+    sinonimos: ['molho branco', 'macarrão branco', 'massa ao bechamel', 'espaguete molho branco', 'fettuccine molho branco'],
+    ingredientes: [
+      { ingrediente: 'Macarrão espaguete', gramasPorPessoa: 100 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 20 },
+      { ingrediente: 'Farinha de trigo', gramasPorPessoa: 15 },
+      { ingrediente: 'Leite integral', gramasPorPessoa: 150 },
+      { ingrediente: 'Queijo parmesão', gramasPorPessoa: 20 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+      { ingrediente: 'Pimenta-do-reino', gramasPorPessoa: 1 },
+    ],
+  },
+
+  {
+    id: 'macarrao-quatro-queijos',
+    nome: 'Macarrão quatro queijos',
+    categoria: 'almoco',
+    sinonimos: ['quattro formaggi', 'quatro queijos', 'massa quatro queijos', 'penne quatro queijos', 'rigatoni quatro queijos'],
+    ingredientes: [
+      { ingrediente: 'Rigatoni', gramasPorPessoa: 90 },
+      { ingrediente: 'Queijo gorgonzola', gramasPorPessoa: 30 },
+      { ingrediente: 'Queijo gruyère', gramasPorPessoa: 30 },
+      { ingrediente: 'Queijo parmesão', gramasPorPessoa: 20 },
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 30 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 60 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 10 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+    ],
+  },
+
+  {
+    id: 'lasanha-bolonhesa',
+    nome: 'Lasanha à bolonhesa',
+    categoria: 'almoco',
+    sinonimos: ['lasanha', 'lasanha de carne', 'lasanha bolonhesa', 'lasanha caseira'],
+    ingredientes: [
+      { ingrediente: 'Lasanha', gramasPorPessoa: 100 },
+      { ingrediente: 'Carne moída bovina', gramasPorPessoa: 150 },
+      { ingrediente: 'Extrato de tomate', gramasPorPessoa: 30 },
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 50 },
+      { ingrediente: 'Queijo parmesão', gramasPorPessoa: 15 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 40 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Alho', gramasPorPessoa: 8 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'penne-ao-molho-vermelho',
+    nome: 'Penne ao molho vermelho',
+    categoria: 'almoco',
+    sinonimos: ['penne', 'penne ao sugo', 'massa ao molho de tomate', 'penne com tomate'],
+    ingredientes: [
+      { ingrediente: 'Penne', gramasPorPessoa: 90 },
+      { ingrediente: 'Extrato de tomate', gramasPorPessoa: 40 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Alho', gramasPorPessoa: 8 },
+      { ingrediente: 'Azeite de oliva', gramasPorPessoa: 12 },
+      { ingrediente: 'Manjericão', gramasPorPessoa: 3 },
+      { ingrediente: 'Sal', gramasPorPessoa: 3 },
+    ],
+  },
+
+  // ─── BOLOS E SOBREMESAS ───────────────────────────────────────
+
+  {
+    id: 'bolo-cenoura',
+    nome: 'Bolo de cenoura',
+    categoria: 'sobremesa',
+    sinonimos: ['bolo de cenoura com chocolate', 'bolo cenoura', 'bolo de cenoura com calda'],
+    ingredientes: [
+      { ingrediente: 'Cenoura', gramasPorPessoa: 60 },
+      { ingrediente: 'Farinha de trigo', gramasPorPessoa: 50 },
+      { ingrediente: 'Açúcar', gramasPorPessoa: 50 },
+      { ingrediente: 'Ovos', gramasPorPessoa: 40 },
+      { ingrediente: 'Óleo de soja', gramasPorPessoa: 25 },
+      { ingrediente: 'Chocolate em pó', gramasPorPessoa: 20 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 10 },
+      { ingrediente: 'Leite integral', gramasPorPessoa: 30 },
+    ],
+  },
+
+  {
+    id: 'bolo-chocolate',
+    nome: 'Bolo de chocolate',
+    categoria: 'sobremesa',
+    sinonimos: ['bolo chocolate', 'bolo de cacau', 'bolo de chocolate fudge'],
+    ingredientes: [
+      { ingrediente: 'Farinha de trigo', gramasPorPessoa: 50 },
+      { ingrediente: 'Açúcar', gramasPorPessoa: 50 },
+      { ingrediente: 'Ovos', gramasPorPessoa: 40 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 30 },
+      { ingrediente: 'Chocolate em pó', gramasPorPessoa: 30 },
+      { ingrediente: 'Leite integral', gramasPorPessoa: 40 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 50 },
+    ],
+  },
+
+  {
+    id: 'bolo-fuba',
+    nome: 'Bolo de fubá',
+    categoria: 'sobremesa',
+    sinonimos: ['bolo fuba', 'bolo de milho', 'bolo de fubá cremoso'],
+    ingredientes: [
+      { ingrediente: 'Fubá', gramasPorPessoa: 50 },
+      { ingrediente: 'Farinha de trigo', gramasPorPessoa: 20 },
+      { ingrediente: 'Açúcar', gramasPorPessoa: 40 },
+      { ingrediente: 'Ovos', gramasPorPessoa: 40 },
+      { ingrediente: 'Leite integral', gramasPorPessoa: 60 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 20 },
+      { ingrediente: 'Queijo parmesão', gramasPorPessoa: 10 },
+    ],
+  },
+
+  // ─── PRATOS ADICIONAIS ────────────────────────────────────────
+
+  {
+    id: 'frango-ao-leite-de-coco',
+    nome: 'Frango ao leite de coco',
+    categoria: 'almoco',
+    sinonimos: ['frango coco', 'frango com leite de coco', 'frango tropeiro'],
+    ingredientes: [
+      { ingrediente: 'Frango coxa e sobrecoxa', gramasPorPessoa: 300 },
+      { ingrediente: 'Leite de coco', gramasPorPessoa: 80 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 50 },
+      { ingrediente: 'Alho', gramasPorPessoa: 10 },
+      { ingrediente: 'Tomate', gramasPorPessoa: 50 },
+      { ingrediente: 'Coentro fresco', gramasPorPessoa: 8 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'caldeirada-peixe',
+    nome: 'Caldeirada de peixe',
+    categoria: 'almoco',
+    sinonimos: ['caldeirada', 'caldeirada de frutos do mar', 'caldo de peixe'],
+    ingredientes: [
+      { ingrediente: 'Tilápia filé', gramasPorPessoa: 200 },
+      { ingrediente: 'Batata inglesa', gramasPorPessoa: 120 },
+      { ingrediente: 'Tomate', gramasPorPessoa: 60 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 50 },
+      { ingrediente: 'Pimentão vermelho', gramasPorPessoa: 30 },
+      { ingrediente: 'Coentro fresco', gramasPorPessoa: 8 },
+      { ingrediente: 'Azeite de oliva', gramasPorPessoa: 15 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'camarao-na-moranga',
+    nome: 'Camarão na moranga',
+    categoria: 'almoco',
+    sinonimos: ['moranga recheada', 'camarão moranga', 'camarão na abóbora'],
+    ingredientes: [
+      { ingrediente: 'Camarão limpo', gramasPorPessoa: 200 },
+      { ingrediente: 'Creme de leite', gramasPorPessoa: 60 },
+      { ingrediente: 'Cream cheese', gramasPorPessoa: 30 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 40 },
+      { ingrediente: 'Alho', gramasPorPessoa: 8 },
+      { ingrediente: 'Coentro fresco', gramasPorPessoa: 6 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'arroz-frutos-do-mar',
+    nome: 'Arroz de frutos do mar',
+    categoria: 'almoco',
+    sinonimos: ['arroz de camarão', 'arroz com frutos do mar', 'arroz de mariscos'],
+    ingredientes: [
+      { ingrediente: 'Arroz branco', gramasPorPessoa: 80 },
+      { ingrediente: 'Camarão limpo', gramasPorPessoa: 100 },
+      { ingrediente: 'Lula', gramasPorPessoa: 80 },
+      { ingrediente: 'Mariscos', gramasPorPessoa: 80 },
+      { ingrediente: 'Cebola', gramasPorPessoa: 50 },
+      { ingrediente: 'Alho', gramasPorPessoa: 10 },
+      { ingrediente: 'Pimentão vermelho', gramasPorPessoa: 30 },
+      { ingrediente: 'Tomate', gramasPorPessoa: 40 },
+      { ingrediente: 'Coentro fresco', gramasPorPessoa: 8 },
+      { ingrediente: 'Azeite de oliva', gramasPorPessoa: 12 },
+      { ingrediente: 'Sal', gramasPorPessoa: 4 },
+    ],
+  },
+
+  {
+    id: 'hamburguer-artesanal',
+    nome: 'Hamburguer artesanal',
+    categoria: 'lanche',
+    sinonimos: ['hamburguer', 'burger', 'smash burger', 'hamburguer caseiro'],
+    ingredientes: [
+      { ingrediente: 'Carne moída bovina', gramasPorPessoa: 200 },
+      { ingrediente: 'Pão de forma', gramasPorPessoa: 60 },
+      { ingrediente: 'Queijo mussarela', gramasPorPessoa: 30 },
+      { ingrediente: 'Tomate', gramasPorPessoa: 30 },
+      { ingrediente: 'Alface', gramasPorPessoa: 20 },
+      { ingrediente: 'Cebola roxa', gramasPorPessoa: 20 },
+      { ingrediente: 'Manteiga', gramasPorPessoa: 10 },
+    ],
+  },
 ]
 
 // ─── FUNÇÕES ──────────────────────────────────────────────────────────────────
@@ -988,6 +1195,55 @@ export function buscarReceita(termo: string): Receita[] {
     const sins = r.sinonimos.map(s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
     return nome.includes(t) || sins.some(s => s.includes(t))
   }).slice(0, 5)
+}
+
+export type ReceitaIAData = {
+  nome: string
+  ingredientes: Array<{ nome: string; gramasPorPessoa: number; categoria: string }>
+}
+
+function normReceita(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+}
+
+function getCacheReceita(nome: string): ReceitaIAData | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const cache = JSON.parse(localStorage.getItem('receitas_ia_cache') || '{}')
+    return cache[normReceita(nome)] ?? null
+  } catch { return null }
+}
+
+function setCacheReceita(nome: string, dados: ReceitaIAData) {
+  if (typeof window === 'undefined') return
+  try {
+    const cache = JSON.parse(localStorage.getItem('receitas_ia_cache') || '{}')
+    cache[normReceita(nome)] = dados
+    localStorage.setItem('receitas_ia_cache', JSON.stringify(cache))
+  } catch {}
+}
+
+export async function buscarReceitaComIA(
+  nome: string,
+  hospedes?: { homens: number; mulheres: number; criancas: number }
+): Promise<ReceitaIAData | null> {
+  const cached = getCacheReceita(nome)
+  if (cached) return cached
+  try {
+    const res = await fetch('/api/refeicao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, homens: hospedes?.homens ?? 0, mulheres: hospedes?.mulheres ?? 0, criancas: hospedes?.criancas ?? 0 }),
+    })
+    if (res.ok) {
+      const dados = await res.json()
+      if (dados.nome && Array.isArray(dados.ingredientes) && dados.ingredientes.length > 0) {
+        setCacheReceita(nome, dados)
+        return dados
+      }
+    }
+  } catch {}
+  return null
 }
 
 // Resolve receita: busca cada ingrediente no DB e retorna com FC/FCC

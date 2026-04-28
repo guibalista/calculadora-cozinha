@@ -89,7 +89,6 @@ export const DB: Ingrediente[] = [
   { nome: 'Chuchu', categoria: 'vegetal', percapitaGramas: 100, fatorCorrecao: 1.20, fatorCoccao: 0.93, sinonimos: ['chuchu'] },
   { nome: 'Palmito', categoria: 'vegetal', percapitaGramas: 60, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['palmito'] },
   { nome: 'Pimenta dedo-de-moça', categoria: 'vegetal', percapitaGramas: 5, fatorCorrecao: 1.10, fatorCoccao: 1.00, sinonimos: ['pimenta', 'pimenta dedo de moça', 'pimenta fresca'] },
-  { nome: 'Cogumelos', categoria: 'vegetal', percapitaGramas: 50, fatorCorrecao: 1.10, fatorCoccao: 0.60, sinonimos: ['cogumelo', 'cogumelos', 'shitake', 'champignon'] },
 
   // ─── FRUTAS ───────────────────────────────────────────────
   { nome: 'Mamão', categoria: 'fruta', percapitaGramas: 200, fatorCorrecao: 1.50, fatorCoccao: 1.00, sinonimos: ['mamao', 'mamão', 'mamão papaia'] },
@@ -160,6 +159,8 @@ export const DB: Ingrediente[] = [
   { nome: 'Açúcar', categoria: 'tempero', percapitaGramas: 15, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['açucar', 'açúcar', 'sugar'] },
   { nome: 'Farinha de trigo', categoria: 'carboidrato', percapitaGramas: 30, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['farinha', 'farinha de trigo'] },
   { nome: 'Farinha de mandioca', categoria: 'carboidrato', percapitaGramas: 30, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['farinha de mandioca', 'farinha', 'farofa'] },
+  { nome: 'Fubá', categoria: 'carboidrato', percapitaGramas: 50, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['fuba', 'fubá', 'farine de milho', 'cornmeal'] },
+  { nome: 'Chocolate em pó', categoria: 'tempero', percapitaGramas: 25, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['chocolate em po', 'chocolate em pó', 'cacau em pó', 'cacau', 'achocolatado', 'nescau'] },
 
   // ─── BEBIDAS ──────────────────────────────────────────────
   { nome: 'Água mineral', categoria: 'bebida', percapitaGramas: 500, fatorCorrecao: 1.00, fatorCoccao: 1.00, sinonimos: ['agua', 'água', 'água mineral'] },
