@@ -105,7 +105,7 @@ function InputReceita({
             style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
         </div>
       )}
-      {(sugestoes.length > 0 || receitaIA) && (
+      {(sugestoes.length > 0 || receitaIA || buscandoIA) && termo.length >= 2 && (
         <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
           style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
           {sugestoes.map(r => (
@@ -118,11 +118,20 @@ function InputReceita({
               <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
             </button>
           ))}
+          {buscandoIA && !receitaIA && (
+            <div className="px-4 py-3.5 flex items-center gap-3">
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0"
+                style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+              <span className="text-sm" style={{ color: '#7BA892' }}>Identificando receita...</span>
+            </div>
+          )}
           {receitaIA && (
             <>
-              <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
-                <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
-              </div>
+              {sugestoes.length > 0 && (
+                <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
+                  <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
+                </div>
+              )}
               <button
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => selecionarIA(receitaIA)}
