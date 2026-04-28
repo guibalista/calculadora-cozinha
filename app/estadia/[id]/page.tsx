@@ -5,11 +5,11 @@ import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { buscarIngrediente, buscarIngredienteIA, type Ingrediente } from '@/lib/ingredientes-db'
 import { buscarReceita, resolverReceita, buscarReceitaComIA, type Receita, type ReceitaIAData } from '@/lib/receitas-db'
-import { totalEquivalente, somarHospedes } from '@/lib/percapita'
+import { totalEquivalente, somarHospedes, FATOR_TIPO, FATOR_SERVICO, LABEL_TIPO, type TipoRefeicao, type TipoServico } from '@/lib/percapita'
 import { formatarPeso } from '@/lib/lista-compras'
 
 interface IngPrato { nome: string; gramasPorPessoa: number; fc: number; fcc: number; categoria: string }
-interface Prato { id: string; nome: string; ingredientes: IngPrato[] }
+interface Prato { id: string; nome: string; ingredientes: IngPrato[]; tipo?: TipoRefeicao; servico?: TipoServico }
 interface Dia { indice: number; label: string; data?: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
 interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numero_dias: number; data_inicio?: string; data_fim?: string; dias: Dia[] }
 type SugestaoIA = { nome: string; tipo: string; ingredientes: IngPrato[] }
@@ -268,6 +268,11 @@ export default function EstadiaPage() {
   const [ingredientes, setIngredientes] = useState<IngPrato[]>([])
   const [receitaDaBase, setReceitaDaBase] = useState(false)
   const [receitaVeioDaIA, setReceitaVeioDaIA] = useState(false)
+  const [tipoAtual, setTipoAtual] = useState<TipoRefeicao>('almoco')
+  const [servicoAtual, setServicoAtual] = useState<TipoServico>('prato')
+  const [colandoReceita, setColandoReceita] = useState(false)
+  const [textoReceita, setTextoReceita] = useState('')
+  const [interpretandoTexto, setInterpretandoTexto] = useState(false)
 
   const [sugestoesIA, setSugestoesIA] = useState<SugestaoIA[]>([])
   const [carregandoIA, setCarregandoIA] = useState(false)
@@ -315,6 +320,37 @@ export default function EstadiaPage() {
   function cancelarPrato() {
     setAdicionandoPrato(false); setNomePrato(''); setIngredientes([])
     setReceitaDaBase(false); setReceitaVeioDaIA(false)
+    setTipoAtual('almoco'); setServicoAtual('prato')
+    setColandoReceita(false); setTextoReceita('')
+  }
+
+  async function interpretarTextoReceita() {
+    if (!textoReceita.trim()) return
+    setInterpretandoTexto(true)
+    try {
+      const res = await fetch('/api/interpretar-receita', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: textoReceita, nome: nomePrato }),
+      })
+      if (res.ok) {
+        const dados = await res.json()
+        if (dados.nome && Array.isArray(dados.ingredientes) && dados.ingredientes.length > 0) {
+          const ings: IngPrato[] = dados.ingredientes.map((ing: { nome: string; gramasPorPessoa: number; categoria: string }) => {
+            const local = buscarIngrediente(ing.nome)[0]
+            return { nome: ing.nome, gramasPorPessoa: ing.gramasPorPessoa, fc: local?.fatorCorrecao ?? 1.10, fcc: local?.fatorCoccao ?? 1.0, categoria: ing.categoria }
+          })
+          setNomePrato(dados.nome)
+          setIngredientes(ings)
+          setReceitaDaBase(false)
+          setReceitaVeioDaIA(true)
+          setColandoReceita(false)
+          setTextoReceita('')
+        }
+      }
+    } finally {
+      setInterpretandoTexto(false)
+    }
   }
 
   async function buscarSugestoesIA() {
@@ -342,7 +378,7 @@ export default function EstadiaPage() {
       const local = buscarIngrediente(ing.nome)[0]
       return { ...ing, fc: local?.fatorCorrecao ?? 1.10, fcc: local?.fatorCoccao ?? 1.0 }
     })
-    const novo = { id: Date.now().toString(), nome: sugestao.nome, ingredientes: ingsEnriquecidos }
+    const novo = { id: Date.now().toString(), nome: sugestao.nome, ingredientes: ingsEnriquecidos, tipo: tipoAtual, servico: servicoAtual }
     const nova = { ...estadia, dias: estadia.dias.map((d, i) => i === diaAtivo ? { ...d, pratos: [...d.pratos, novo] } : d) }
     salvar(nova)
     setMostrandoSugestoes(false)
@@ -418,7 +454,7 @@ export default function EstadiaPage() {
 
   function salvarPrato() {
     if (!nomePrato || ingredientes.length === 0 || !estadia) return
-    const novo: Prato = { id: Date.now().toString(), nome: nomePrato, ingredientes }
+    const novo: Prato = { id: Date.now().toString(), nome: nomePrato, ingredientes, tipo: tipoAtual, servico: servicoAtual }
     const nova = { ...estadia, dias: estadia.dias.map((d, i) => i === diaAtivo ? { ...d, pratos: [...d.pratos, novo] } : d) }
     salvar(nova)
     cancelarPrato()
@@ -550,37 +586,112 @@ export default function EstadiaPage() {
         </div>
 
         {/* Refeições salvas */}
-        {dia.pratos.map(prato => (
-          <div key={prato.id} className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
-            <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold" style={{ color: '#F2EBE0' }}>{prato.nome}</p>
-              <button onClick={() => removerPrato(prato.id)} className="text-lg px-1" style={{ color: '#9B8B7A' }}>×</button>
-            </div>
-            <div className="space-y-1">
-              {prato.ingredientes.map((ing, i) => {
-                const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
-                return (
-                  <div key={i} className="flex justify-between items-center text-sm py-1.5"
-                    style={{ borderBottom: i < prato.ingredientes.length - 1 ? '1px solid #3A2E22' : 'none' }}>
-                    <span style={{ color: '#9B8B7A' }}>{ing.nome}</span>
-                    <span className="font-medium" style={{ color: '#F2EBE0' }}>{formatarPeso(bruto)}</span>
+        {dia.pratos.map(prato => {
+          const fatorRefeicao = FATOR_TIPO[prato.tipo ?? 'almoco'] * FATOR_SERVICO[prato.servico ?? 'prato']
+          return (
+            <div key={prato.id} className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="font-semibold" style={{ color: '#F2EBE0' }}>{prato.nome}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="text-xs px-2 py-0.5 rounded-lg font-medium" style={{ background: '#2A2118', color: '#C4823A' }}>
+                      {LABEL_TIPO[prato.tipo ?? 'almoco']}
+                    </span>
+                    {(prato.servico ?? 'prato') === 'bufe' && (
+                      <span className="text-xs px-2 py-0.5 rounded-lg" style={{ background: '#2A2118', color: '#9B8B7A' }}>Bufê</span>
+                    )}
                   </div>
-                )
-              })}
+                </div>
+                <button onClick={() => removerPrato(prato.id)} className="text-lg px-1 flex-shrink-0" style={{ color: '#9B8B7A' }}>×</button>
+              </div>
+              <div className="space-y-1">
+                {prato.ingredientes.map((ing, i) => {
+                  const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv * fatorRefeicao
+                  return (
+                    <div key={i} className="flex justify-between items-center text-sm py-1.5"
+                      style={{ borderBottom: i < prato.ingredientes.length - 1 ? '1px solid #3A2E22' : 'none' }}>
+                      <span style={{ color: '#9B8B7A' }}>{ing.nome}</span>
+                      <span className="font-medium" style={{ color: '#F2EBE0' }}>{formatarPeso(bruto)}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* Formulário nova refeição */}
         {adicionandoPrato ? (
           <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
             <p className="font-semibold mb-4" style={{ color: '#F2EBE0' }}>Nova refeição</p>
 
+            {/* Tipo da refeição */}
+            <div className="mb-3">
+              <p className="text-xs font-medium mb-2" style={{ color: '#9B8B7A' }}>Tipo de refeição</p>
+              <div className="flex gap-2 flex-wrap">
+                {(['cafe_manha', 'almoco', 'jantar', 'lanche', 'churrasco'] as TipoRefeicao[]).map(tipo => (
+                  <button key={tipo} onClick={() => setTipoAtual(tipo)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold"
+                    style={tipoAtual === tipo
+                      ? { background: '#C4823A', color: '#fff' }
+                      : { background: '#2A2118', color: '#9B8B7A', border: '1px solid #3A2E22' }}>
+                    {LABEL_TIPO[tipo]}{tipo === 'churrasco' && tipoAtual === tipo ? ' +35%' : ''}{tipo === 'cafe_manha' && tipoAtual === tipo ? ' -50%' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Modo de serviço */}
+            <div className="mb-4 flex items-center gap-2">
+              <p className="text-xs font-medium flex-shrink-0" style={{ color: '#9B8B7A' }}>Serviço:</p>
+              {(['prato', 'bufe'] as TipoServico[]).map(s => (
+                <button key={s} onClick={() => setServicoAtual(s)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold"
+                  style={servicoAtual === s
+                    ? { background: '#C4823A', color: '#fff' }
+                    : { background: '#2A2118', color: '#9B8B7A', border: '1px solid #3A2E22' }}>
+                  {s === 'prato' ? 'Prato servido' : 'Bufê +18%'}
+                </button>
+              ))}
+            </div>
+
             <InputReceita
               onChange={handleChangeNome}
               onSelect={handleSelectReceita}
               hospedes={estadia}
             />
+
+            {/* Colar receita */}
+            {!colandoReceita ? (
+              <button onClick={() => setColandoReceita(true)}
+                className="w-full text-xs py-2 mb-3 text-center"
+                style={{ color: '#9B8B7A' }}>
+                Ou cole o texto da sua receita
+              </button>
+            ) : (
+              <div className="mb-4">
+                <textarea
+                  value={textoReceita}
+                  onChange={e => setTextoReceita(e.target.value)}
+                  placeholder="Cole o texto da receita... Ex: 500g frango, 2 tomates, 1 cebola, alho, sal e limão"
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-2xl border text-sm outline-none resize-none"
+                  style={{ border: '1.5px solid #3A2E22', background: '#1C1712', color: '#F2EBE0' }}
+                />
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => { setColandoReceita(false); setTextoReceita('') }}
+                    className="flex-1 py-2.5 rounded-2xl text-xs font-medium"
+                    style={{ border: '1.5px solid #3A2E22', color: '#9B8B7A', background: '#1C1712' }}>
+                    Cancelar
+                  </button>
+                  <button onClick={interpretarTextoReceita} disabled={!textoReceita.trim() || interpretandoTexto}
+                    className="flex-1 py-2.5 rounded-2xl text-xs font-semibold disabled:opacity-40"
+                    style={{ background: '#C4823A', color: '#fff' }}>
+                    {interpretandoTexto ? 'Interpretando...' : 'Interpretar receita'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {(receitaDaBase || receitaVeioDaIA) && ingredientes.length > 0 && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#2A2118' }}>

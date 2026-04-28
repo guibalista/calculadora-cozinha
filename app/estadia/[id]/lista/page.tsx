@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { totalEquivalente, somarHospedes } from '@/lib/percapita'
+import { totalEquivalente, somarHospedes, FATOR_TIPO, FATOR_SERVICO, type TipoRefeicao, type TipoServico } from '@/lib/percapita'
 import { agruparPorSetor, gerarTextoWhatsApp, type ItemLista } from '@/lib/setores'
 import { baixarPDF, type SecaoPDF } from '@/lib/exportar-pdf'
 import { converterParaCompra } from '@/lib/unidades-compra'
 
 interface Ingrediente { nome: string; gramasPorPessoa: number; fc: number; categoria: string }
-interface Prato { id: string; nome: string; ingredientes: Ingrediente[] }
+interface Prato { id: string; nome: string; ingredientes: Ingrediente[]; tipo?: TipoRefeicao; servico?: TipoServico }
 interface Dia { indice: number; label: string; pratos: Prato[]; extrasHomens: number; extrasMulheres: number; extrasCriancas: number }
 interface Estadia { id: string; nome: string; homens: number; mulheres: number; criancas: number; numero_dias: number; data_inicio?: string; data_fim?: string; dias: Dia[] }
 
@@ -67,8 +67,9 @@ export default function ListaComprasPage() {
     )
     const equiv = totalEquivalente(hospedes)
     for (const prato of dia.pratos) {
+      const fatorRefeicao = FATOR_TIPO[prato.tipo ?? 'almoco'] * FATOR_SERVICO[prato.servico ?? 'prato']
       for (const ing of prato.ingredientes) {
-        const liquido = (ing.gramasPorPessoa / 1000) * equiv * fator
+        const liquido = (ing.gramasPorPessoa / 1000) * equiv * fator * fatorRefeicao
         const bruto = liquido * ing.fc
         if (!totaisMap[ing.nome]) totaisMap[ing.nome] = { categoria: ing.categoria, liquido: 0, bruto: 0 }
         totaisMap[ing.nome].liquido += liquido
@@ -110,8 +111,9 @@ export default function ListaComprasPage() {
         const equiv = totalEquivalente(hospedes) * fator
         const map: Record<string, { categoria: string; bruto: number }> = {}
         for (const prato of dia.pratos) {
+          const fatorRefeicao = FATOR_TIPO[prato.tipo ?? 'almoco'] * FATOR_SERVICO[prato.servico ?? 'prato']
           for (const ing of prato.ingredientes) {
-            const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
+            const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv * fatorRefeicao
             if (!map[ing.nome]) map[ing.nome] = { categoria: ing.categoria, bruto: 0 }
             map[ing.nome].bruto += bruto
           }
