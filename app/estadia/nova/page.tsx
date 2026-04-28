@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { LIMITE_FREE } from '@/lib/stripe'
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -57,6 +58,21 @@ export default function NovaEstadiaPage() {
   const [homens, setHomens] = useState(0)
   const [mulheres, setMulheres] = useState(0)
   const [criancas, setCriancas] = useState(0)
+  const [bloqueado, setBloqueado] = useState(false)
+
+  useEffect(() => {
+    async function verificar() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const [{ count }, { data: sub }] = await Promise.all([
+        supabase.from('estadias').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('subscriptions').select('status').eq('user_id', user.id).single(),
+      ])
+      const planoAtivo = sub?.status === 'active' || sub?.status === 'trialing'
+      if (!planoAtivo && (count ?? 0) >= LIMITE_FREE) setBloqueado(true)
+    }
+    verificar()
+  }, [])
 
   const totalPessoas = homens + mulheres + criancas
   const numeroDias = dataInicio && dataFim
@@ -83,6 +99,36 @@ export default function NovaEstadiaPage() {
       dias: gerarDias(dataInicio, dataFim),
     })
     if (!error) router.push(`/estadia/${id}`)
+  }
+
+  if (bloqueado) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: '#1C1712' }}>
+        <div className="w-full max-w-sm text-center">
+          <div className="w-14 h-14 rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: '#2A2118' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="11" width="18" height="11" rx="2" stroke="#C4823A" strokeWidth="1.8"/>
+              <path d="M7 11V7a5 5 0 0110 0v4" stroke="#C4823A" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: '#F2EBE0' }}>Limite gratuito atingido</h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: '#9B8B7A' }}>
+            Você usou os {LIMITE_FREE} planejamentos gratuitos.<br />
+            Assine para criar planejamentos ilimitados.
+          </p>
+          <Link href="/assinar"
+            className="block w-full py-4 rounded-2xl font-semibold text-base text-center mb-3"
+            style={{ background: '#C4823A', color: '#fff' }}>
+            Ver plano — 7 dias grátis
+          </Link>
+          <Link href="/dashboard"
+            className="block text-sm py-2 text-center"
+            style={{ color: '#9B8B7A' }}>
+            Voltar ao início
+          </Link>
+        </div>
+      </main>
+    )
   }
 
   return (

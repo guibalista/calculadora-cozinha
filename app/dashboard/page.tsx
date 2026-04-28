@@ -1,7 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { LIMITE_FREE } from '@/lib/stripe'
+
+type StatusPlano = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled'
 
 interface Prato { id: string }
 interface Dia { pratos: Prato[] }
@@ -71,18 +75,38 @@ export default function DashboardPage() {
   const [estadias, setEstadias] = useState<Estadia[]>([])
   const [deletando, setDeletando] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
+  const [statusPlano, setStatusPlano] = useState<StatusPlano>('free')
+  const [gerindoPlano, setGerindoPlano] = useState(false)
+  const searchParams = useSearchParams()
+  const assinaturaAtivada = searchParams.get('assinatura') === 'ativa'
 
   useEffect(() => {
     async function carregar() {
-      const { data } = await supabase
-        .from('estadias')
-        .select('id, nome, homens, mulheres, criancas, numero_dias, data_inicio, data_fim, dias')
-        .order('created_at', { ascending: false })
-      setEstadias(ordenarEstadias((data ?? []) as Estadia[]))
+      const [{ data: estadiasData }, { data: { user } }] = await Promise.all([
+        supabase.from('estadias').select('id, nome, homens, mulheres, criancas, numero_dias, data_inicio, data_fim, dias').order('created_at', { ascending: false }),
+        supabase.auth.getUser(),
+      ])
+      setEstadias(ordenarEstadias((estadiasData ?? []) as Estadia[]))
+
+      if (user) {
+        const { data: sub } = await supabase.from('subscriptions').select('status').eq('user_id', user.id).single()
+        if (sub?.status) setStatusPlano(sub.status as StatusPlano)
+      }
       setCarregando(false)
     }
     carregar()
   }, [])
+
+  async function gerirPlano() {
+    setGerindoPlano(true)
+    try {
+      const res = await fetch('/api/portal', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } finally {
+      setGerindoPlano(false)
+    }
+  }
 
   async function sair() {
     await supabase.auth.signOut()
@@ -120,11 +144,20 @@ export default function DashboardPage() {
 
   const total = estadias.length
   const hoje = new Date().toISOString().split('T')[0]
+  const planoAtivo = statusPlano === 'active' || statusPlano === 'trialing'
+  const podeNovoPlano = planoAtivo || total < LIMITE_FREE
 
   return (
     <main className="min-h-screen max-w-2xl mx-auto px-5 py-8" style={{ background: '#1C1712' }}>
 
-      <div className="flex items-start justify-between mb-8">
+      {assinaturaAtivada && (
+        <div className="mb-4 px-4 py-3 rounded-2xl text-sm font-semibold text-center"
+          style={{ background: '#C4823A', color: '#fff' }}>
+          Assinatura ativada — bem-vindo ao Despensa Pro
+        </div>
+      )}
+
+      <div className="flex items-start justify-between mb-6">
         <div>
           <p className="text-xs font-medium mb-0.5 capitalize" style={{ color: '#9B8B7A' }}>{dataHoje()}</p>
           <h1 className="text-2xl font-bold leading-tight" style={{ color: '#F2EBE0' }}>{saudacao()}</h1>
@@ -138,16 +171,72 @@ export default function DashboardPage() {
             style={{ border: '1.5px solid #3A2E22', color: '#9B8B7A', background: '#252015' }}>
             Sair
           </button>
-          <Link href="/estadia/nova"
-            className="flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: '#C4823A', color: '#fff' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-            Novo
-          </Link>
+          {podeNovoPlano ? (
+            <Link href="/estadia/nova"
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm"
+              style={{ background: '#C4823A', color: '#fff' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+              Novo
+            </Link>
+          ) : (
+            <Link href="/assinar"
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm"
+              style={{ background: '#C4823A', color: '#fff' }}>
+              Assinar
+            </Link>
+          )}
         </div>
       </div>
+
+      {/* Banner de plano */}
+      {!planoAtivo && !carregando && (
+        <div className="mb-5 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+          style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
+          <div>
+            <p className="text-xs font-semibold" style={{ color: '#F2EBE0' }}>
+              {total}/{LIMITE_FREE} planejamentos gratuitos
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#9B8B7A' }}>
+              {total >= LIMITE_FREE ? 'Limite atingido — assine para continuar' : `${LIMITE_FREE - total} restante${LIMITE_FREE - total !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+          <Link href="/assinar"
+            className="px-3 py-2 rounded-xl text-xs font-semibold flex-shrink-0"
+            style={{ background: '#C4823A', color: '#fff' }}>
+            Ver plano
+          </Link>
+        </div>
+      )}
+
+      {statusPlano === 'trialing' && !carregando && (
+        <div className="mb-5 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+          style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
+          <p className="text-xs font-semibold" style={{ color: '#C4823A' }}>
+            Período de teste ativo · 7 dias grátis
+          </p>
+          <button onClick={gerirPlano} disabled={gerindoPlano}
+            className="px-3 py-2 rounded-xl text-xs font-semibold flex-shrink-0"
+            style={{ border: '1.5px solid #C4823A', color: '#C4823A', background: 'transparent' }}>
+            {gerindoPlano ? '...' : 'Gerenciar'}
+          </button>
+        </div>
+      )}
+
+      {statusPlano === 'active' && !carregando && (
+        <div className="mb-5 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+          style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
+          <p className="text-xs font-semibold" style={{ color: '#5A8A5A' }}>
+            Despensa Pro · ativo
+          </p>
+          <button onClick={gerirPlano} disabled={gerindoPlano}
+            className="px-3 py-2 rounded-xl text-xs font-semibold flex-shrink-0"
+            style={{ border: '1.5px solid #3A2E22', color: '#9B8B7A', background: 'transparent' }}>
+            {gerindoPlano ? '...' : 'Gerenciar'}
+          </button>
+        </div>
+      )}
 
       {carregando ? (
         <div className="flex justify-center py-20">
