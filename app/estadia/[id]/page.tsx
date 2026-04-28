@@ -511,7 +511,7 @@ export default function EstadiaPage() {
 
       <div className="px-5 space-y-4 pb-10">
         {/* Convidados extras */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="font-semibold text-sm mb-4" style={{ color: '#F2EBE0' }}>
             Convidados extras · {totalPessoas} pessoas no total
           </p>
@@ -551,7 +551,7 @@ export default function EstadiaPage() {
 
         {/* Refeições salvas */}
         {dia.pratos.map(prato => (
-          <div key={prato.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <div key={prato.id} className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
             <div className="flex justify-between items-center mb-3">
               <p className="font-semibold" style={{ color: '#F2EBE0' }}>{prato.nome}</p>
               <button onClick={() => removerPrato(prato.id)} className="text-lg px-1" style={{ color: '#9B8B7A' }}>×</button>
@@ -573,7 +573,7 @@ export default function EstadiaPage() {
 
         {/* Formulário nova refeição */}
         {adicionandoPrato ? (
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #C4823A' }}>
+          <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
             <p className="font-semibold mb-4" style={{ color: '#F2EBE0' }}>Nova refeição</p>
 
             <InputReceita
@@ -712,14 +712,14 @@ export default function EstadiaPage() {
             </div>
 
             <div className="px-5 pb-8 space-y-4">
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome</label>
                 <input type="text" value={editNome} onChange={e => setEditNome(e.target.value)}
                   className="w-full px-4 py-3 rounded-2xl border text-base outline-none"
                   style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
               </div>
 
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <p className="font-medium text-sm mb-4" style={{ color: '#F2EBE0' }}>Período</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -744,7 +744,7 @@ export default function EstadiaPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <p className="font-medium text-sm mb-4" style={{ color: '#F2EBE0' }}>Hóspedes</p>
                 {([
                   { label: 'Homens', val: editHomens, set: setEditHomens },

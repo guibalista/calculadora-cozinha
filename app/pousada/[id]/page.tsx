@@ -355,7 +355,7 @@ export default function PousadaPage() {
             {pousada.cardapio.map(ref => {
               const custo = custoRefeicaoPorPessoa(ref)
               return (
-                <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                <div key={ref.id} className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="font-semibold" style={{ color: '#F2EBE0' }}>{ref.nome}</p>
@@ -374,7 +374,7 @@ export default function PousadaPage() {
             })}
 
             {addRef ? (
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #C4823A' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
                 <p className="font-semibold mb-4" style={{ color: '#F2EBE0' }}>Nova refeição</p>
 
                 <div className="mb-3">
@@ -459,7 +459,7 @@ export default function PousadaPage() {
             ) : (
               <>
                 {/* Modo de planejamento */}
-                <div className="bg-white rounded-3xl p-4" style={{ border: '1.5px solid #3A2E22' }}>
+                <div className="rounded-3xl p-4" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                   <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Modo de planejamento</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
@@ -480,7 +480,7 @@ export default function PousadaPage() {
 
                 {/* Estimativa geral */}
                 {modoPlano === 'estimativa' && (
-                  <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                  <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                     <p className="text-sm font-semibold mb-4" style={{ color: '#F2EBE0' }}>Configurar compra</p>
 
                     <div className="mb-5">
@@ -578,7 +578,7 @@ export default function PousadaPage() {
                       const total = res.homens + res.mulheres + res.criancas
                       const partes = [res.homens > 0 ? `${res.homens}H` : '', res.mulheres > 0 ? `${res.mulheres}M` : '', res.criancas > 0 ? `${res.criancas}C` : ''].filter(Boolean).join(' ')
                       return (
-                        <div key={res.id} className="bg-white rounded-3xl px-5 py-4 flex items-center justify-between" style={{ border: '1.5px solid #3A2E22' }}>
+                        <div key={res.id} className="rounded-3xl px-5 py-4 flex items-center justify-between" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                           <div>
                             <p className="font-semibold text-sm" style={{ color: '#F2EBE0' }}>
                               {res.nome || `${total} hóspede${total !== 1 ? 's' : ''}`}
@@ -593,7 +593,7 @@ export default function PousadaPage() {
                     })}
 
                     {addReserva ? (
-                      <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #C4823A' }}>
+                      <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
                         <p className="font-semibold mb-4 text-sm" style={{ color: '#F2EBE0' }}>Nova reserva</p>
 
                         <input value={reservaNome} onChange={e => setReservaNome(e.target.value)}
@@ -686,7 +686,7 @@ export default function PousadaPage() {
                       </button>
                     </div>
                     {grupos.map(grupo => (
-                      <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+                      <div key={grupo.setor} className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                         <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                           <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>{grupo.setor}</p>
                         </div>
@@ -711,7 +711,7 @@ export default function PousadaPage() {
           <>
             {/* Resumo F&B */}
             {custoNoite > 0 && (
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>F&B por noite</p>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -738,7 +738,7 @@ export default function PousadaPage() {
 
             {/* CMV por refeição */}
             {pousada.cardapio.length > 0 && (
-              <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                   <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>Custo por refeição / pessoa</p>
                 </div>
@@ -761,7 +761,7 @@ export default function PousadaPage() {
             )}
 
             {/* Preços dos ingredientes */}
-            <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+            <div className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
               <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                 <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>Preços dos ingredientes</p>
                 <p className="text-xs mt-0.5" style={{ color: '#9B8B7A' }}>Preço de compra por kg</p>

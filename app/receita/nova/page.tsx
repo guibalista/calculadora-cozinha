@@ -67,7 +67,7 @@ export default function NovaReceitaPage() {
       <div className="space-y-4">
 
         {/* Nome */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome do evento</label>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)}
             placeholder="Ex: Casamento Silva, Churrasco de fim de ano"
@@ -76,7 +76,7 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Tipo */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Tipo de evento</p>
           <div className="grid grid-cols-3 gap-2">
             {TIPOS_EVENTO.map(t => (
@@ -92,7 +92,7 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Total de pessoas */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium" style={{ color: '#F2EBE0' }}>Total de convidados</p>
             <span className="text-2xl font-bold" style={{ color: '#C4823A' }}>{totalPessoas}</span>
@@ -117,7 +117,7 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Duração */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Duração do evento</p>
           <div className="grid grid-cols-2 gap-2">
             {DURACOES.map(d => (
@@ -134,7 +134,7 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Perfil de consumo */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Perfil de consumo</p>
           <div className="space-y-2">
             {PERFIS.map(p => (
@@ -151,7 +151,7 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Data */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>
             Data do evento <span style={{ color: '#9B8B7A' }}>(opcional)</span>
           </label>

@@ -77,7 +77,7 @@ export default function NovaPousadaPage() {
       <p className="text-sm mb-8" style={{ color: '#9B8B7A' }}>Configure seu estabelecimento</p>
 
       <div className="space-y-4">
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome da pousada</label>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)}
             placeholder="Ex: Pousada do Sol, Chalés da Serra"
@@ -85,7 +85,7 @@ export default function NovaPousadaPage() {
             style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="font-medium text-sm" style={{ color: '#F2EBE0' }}>Total de quartos</p>
             <span className="font-bold text-lg" style={{ color: '#C4823A' }}>{totalQuartos}</span>
@@ -98,7 +98,7 @@ export default function NovaPousadaPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl px-5 pb-2" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl px-5 pb-2" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#F2EBE0' }}>Hóspedes típicos por noite</p>
           <p className="text-sm pb-2" style={{ color: '#9B8B7A' }}>Média de ocupação base para o cardápio</p>
           <ContadorPessoas label="Homens" sublabel="Porção completa" value={homens} onChange={setHomens} />
@@ -111,7 +111,7 @@ export default function NovaPousadaPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Refeições incluídas na diária</p>
           <div className="flex gap-2 flex-wrap">
             {REFEICOES_OPT.map(r => (
@@ -126,7 +126,7 @@ export default function NovaPousadaPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Valor da diária (para CMV)</p>
           <div className="flex gap-2 mb-3">
             {[{ key: 'por_quarto', label: 'Por quarto' }, { key: 'por_pessoa', label: 'Por pessoa' }].map(t => (

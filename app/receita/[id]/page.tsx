@@ -297,7 +297,7 @@ export default function ReceitaPage() {
             {/* FORM SEMPRE NO TOPO */}
             <div ref={formRef}>
               {adicionando ? (
-                <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #C4823A' }}>
+                <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
                   <p className="font-semibold mb-4" style={{ color: '#F2EBE0' }}>Nova refeição / prato</p>
 
                   {/* Nome com autocomplete */}
@@ -428,7 +428,7 @@ export default function ReceitaPage() {
                   const cmvRef = (ref.custoEstimado && ref.precoVenda)
                     ? calcularCMV(ref.custoEstimado, ref.precoVenda) : 0
                   return (
-                    <div key={ref.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                    <div key={ref.id} className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                       <div className="flex justify-between items-start mb-2">
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold" style={{ color: '#F2EBE0' }}>{ref.nome}</p>
@@ -496,7 +496,7 @@ export default function ReceitaPage() {
             ) : (
               <>
                 {/* Preço cobrado */}
-                <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                   <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#9B8B7A' }}>Preço cobrado do cliente</p>
                   {editandoVenda ? (
                     <div className="flex items-center gap-2">
@@ -529,7 +529,7 @@ export default function ReceitaPage() {
 
                 {/* Resumo */}
                 {custoEfetivo > 0 && (
-                  <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                  <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                     <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: '#9B8B7A' }}>Resumo financeiro</p>
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
@@ -568,7 +568,7 @@ export default function ReceitaPage() {
 
                 {/* CMV por refeição (quando tem custo/preço por refeição) */}
                 {evento.refeicoes.some(r => r.custoEstimado && r.precoVenda) && (
-                  <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+                  <div className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                     <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9B8B7A' }}>CMV por prato</p>
                     </div>
@@ -597,7 +597,7 @@ export default function ReceitaPage() {
 
                 {/* Preços por kg */}
                 {ingsUnicos.length > 0 && (
-                  <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+                  <div className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                     <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#9B8B7A' }}>
                         Preços dos insumos (por kg)

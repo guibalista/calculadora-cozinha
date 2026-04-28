@@ -268,7 +268,7 @@ export default function RestaurantePage() {
               const cmv = calcularCMV(custo, prato.precoVenda)
               const status = statusCMV(cmv)
               return (
-                <div key={prato.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                <div key={prato.id} className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-base" style={{ color: '#F2EBE0' }}>{prato.nome}</p>
@@ -300,7 +300,7 @@ export default function RestaurantePage() {
             })}
 
             {addPrato ? (
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #C4823A' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
                 <p className="font-semibold mb-4" style={{ color: '#F2EBE0' }}>Novo prato</p>
 
                 {/* Nome com autocomplete de receitas */}
@@ -402,8 +402,8 @@ export default function RestaurantePage() {
               <>
                 <p className="text-sm" style={{ color: '#9B8B7A' }}>Quantas porções de cada prato hoje?</p>
                 {rest.pratos.map(prato => (
-                  <div key={prato.id} className="bg-white rounded-3xl px-5 py-4 flex items-center justify-between"
-                    style={{ border: '1.5px solid #3A2E22' }}>
+                  <div key={prato.id} className="rounded-3xl px-5 py-4 flex items-center justify-between"
+                    style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm" style={{ color: '#F2EBE0' }}>{prato.nome}</p>
                       <p className="text-xs capitalize mt-0.5" style={{ color: '#9B8B7A' }}>{prato.categoria}</p>
@@ -443,7 +443,7 @@ export default function RestaurantePage() {
                       </button>
                     </div>
                     {grupos.map(grupo => (
-                      <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+                      <div key={grupo.setor} className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                         <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                           <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>{grupo.setor}</p>
                         </div>
@@ -468,7 +468,7 @@ export default function RestaurantePage() {
           <>
             {/* Resumo geral */}
             {rest.pratos.length > 0 && cmvGeral > 0 && (
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>CMV Geral</p>
                 <div className="flex items-center justify-between">
                   <div>
@@ -486,7 +486,7 @@ export default function RestaurantePage() {
 
             {/* CMV por prato */}
             {rest.pratos.length > 0 && (
-              <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                   <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>CMV por prato</p>
                 </div>
@@ -523,7 +523,7 @@ export default function RestaurantePage() {
             )}
 
             {/* Preços dos ingredientes */}
-            <div className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+            <div className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
               <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                 <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>
                   Preços dos ingredientes

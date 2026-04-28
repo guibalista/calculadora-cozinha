@@ -95,7 +95,7 @@ export default function NovaEstadiaPage() {
       <p className="text-sm mb-8" style={{ color: '#9B8B7A' }}>Defina as datas e os hóspedes</p>
 
       {/* Nome */}
-      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #3A2E22' }}>
+      <div className="rounded-3xl p-5 mb-4" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
         <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome da estadia</label>
         <input type="text" value={nome} onChange={e => setNome(e.target.value)}
           placeholder="Ex: Família Silva, Grupo de Amigos"
@@ -104,7 +104,7 @@ export default function NovaEstadiaPage() {
       </div>
 
       {/* Datas */}
-      <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #3A2E22' }}>
+      <div className="rounded-3xl p-5 mb-4" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
         <p className="font-medium text-base mb-4" style={{ color: '#F2EBE0' }}>Período da estadia</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -130,7 +130,7 @@ export default function NovaEstadiaPage() {
       </div>
 
       {/* Hóspedes */}
-      <div className="bg-white rounded-3xl px-5 mb-6" style={{ border: '1.5px solid #3A2E22' }}>
+      <div className="rounded-3xl px-5 mb-6" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
         <p className="font-semibold text-base pt-5 mb-1" style={{ color: '#F2EBE0' }}>Hóspedes</p>
         <p className="text-sm pb-2" style={{ color: '#9B8B7A' }}>Quem fica durante toda a estadia</p>
         <ContadorPessoas label="Homens" sublabel="Adulto" value={homens} onChange={setHomens} />

@@ -35,7 +35,7 @@ export default function NovoRestaurantePage() {
       <p className="text-sm mb-8" style={{ color: '#9B8B7A' }}>Configure seu estabelecimento</p>
 
       <div className="space-y-4">
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome do estabelecimento</label>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)}
             placeholder="Ex: Restaurante da Praia, Bar do João"
@@ -43,7 +43,7 @@ export default function NovoRestaurantePage() {
             style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Tipo de estabelecimento</p>
           <div className="grid grid-cols-3 gap-2">
             {TIPOS.map(t => (

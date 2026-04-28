@@ -154,7 +154,7 @@ export default function CalculadoraPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5 mb-4" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs mb-1" style={{ color: '#9B8B7A' }}>Custo total</p>
@@ -174,7 +174,7 @@ export default function CalculadoraPage() {
         <p className="font-semibold text-sm mb-3" style={{ color: '#F2EBE0' }}>Ingredientes calculados</p>
         <div className="space-y-3 mb-5">
           {cenario.ingredientes.map((ing, i) => (
-            <div key={i} className="bg-white rounded-3xl p-4" style={{ border: '1.5px solid #3A2E22' }}>
+            <div key={i} className="rounded-3xl p-4" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
               <div className="flex justify-between items-center mb-3">
                 <p className="font-semibold text-sm" style={{ color: '#F2EBE0' }}>{ing.nome}</p>
                 <p className="font-semibold text-sm" style={{ color: '#9B8B7A' }}>{formatarMoeda(ing.custoTotal)}</p>
@@ -195,7 +195,7 @@ export default function CalculadoraPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-3xl p-5 mb-6" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5 mb-6" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Comparativo</p>
           <div className="space-y-2">
             {cenarios.map(c => (
@@ -232,7 +232,7 @@ export default function CalculadoraPage() {
         <h1 className="text-xl font-bold mb-1" style={{ color: '#F2EBE0' }}>Ingredientes</h1>
         <p className="text-sm mb-6" style={{ color: '#9B8B7A' }}>Adicione os ingredientes da receita</p>
 
-        <div className="bg-white rounded-3xl p-5 mb-4" style={{ border: '1.5px solid #C4823A' }}>
+        <div className="rounded-3xl p-5 mb-4" style={{ background: '#252015', border: '1.5px solid #C4823A' }}>
           <p className="font-semibold text-sm mb-4" style={{ color: '#F2EBE0' }}>Adicionar ingrediente</p>
           <BuscaIngrediente onAdicionar={ing => setIngredientes(prev => [...prev, ing])} />
         </div>
@@ -241,8 +241,8 @@ export default function CalculadoraPage() {
           <div className="space-y-2 mb-6">
             <p className="font-semibold text-sm" style={{ color: '#F2EBE0' }}>Adicionados ({ingredientes.length})</p>
             {ingredientes.map(ing => (
-              <div key={ing.id} className="bg-white rounded-2xl px-4 py-3 flex items-center justify-between"
-                style={{ border: '1.5px solid #3A2E22' }}>
+              <div key={ing.id} className="rounded-2xl px-4 py-3 flex items-center justify-between"
+                style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                 <div>
                   <p className="font-semibold text-sm" style={{ color: '#F2EBE0' }}>{ing.nome}</p>
                   <p className="text-xs" style={{ color: '#9B8B7A' }}>
@@ -276,7 +276,7 @@ export default function CalculadoraPage() {
       <p className="text-sm mb-8" style={{ color: '#9B8B7A' }}>Custo, markup e preço de venda por pessoa</p>
 
       <div className="space-y-4">
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome da receita</label>
           <input type="text" value={nomeReceita} onChange={e => setNomeReceita(e.target.value)}
             placeholder="Ex: Moqueca de camarão, Frango assado"
@@ -284,7 +284,7 @@ export default function CalculadoraPage() {
             style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="font-medium text-sm" style={{ color: '#F2EBE0' }}>Número de pessoas</p>
             <span className="font-bold text-lg" style={{ color: '#C4823A' }}>{numeroPessoas}</span>
@@ -297,7 +297,7 @@ export default function CalculadoraPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-sm" style={{ color: '#F2EBE0' }}>Porções da receita original</p>
             <span className="font-bold text-lg" style={{ color: '#C4823A' }}>{porcoes}</span>
@@ -311,7 +311,7 @@ export default function CalculadoraPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+        <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           <p className="font-medium text-sm mb-3" style={{ color: '#F2EBE0' }}>Markup</p>
           <div className="grid grid-cols-4 gap-2">
             {[2, 2.5, 3, 3.5].map(m => (

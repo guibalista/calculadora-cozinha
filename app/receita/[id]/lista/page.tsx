@@ -183,7 +183,7 @@ export default function ListaReceitaPage() {
       ) : (
         <div className="space-y-4">
           {grupos.map(grupo => (
-            <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+            <div key={grupo.setor} className="rounded-3xl overflow-hidden" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
               <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
                 <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>{grupo.setor}</p>
               </div>
@@ -226,7 +226,7 @@ export default function ListaReceitaPage() {
           ))}
 
           {/* Resumo */}
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <div className="rounded-3xl p-5" style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Resumo</p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
