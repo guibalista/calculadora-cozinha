@@ -56,35 +56,35 @@ export default function NovaReceitaPage() {
   }
 
   return (
-    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
+    <main className="min-h-screen px-5 py-8 max-w-lg mx-auto" style={{ background: '#1C1712' }}>
       <div className="mb-8">
-        <Link href="/dashboard" className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <Link href="/dashboard" className="text-sm font-medium" style={{ color: '#C4823A' }}>← Voltar</Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Novo evento</h1>
-      <p className="text-sm mb-8" style={{ color: '#5A7A68' }}>Cardápio, compras e financeiro em um só lugar</p>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#F2EBE0' }}>Novo evento</h1>
+      <p className="text-sm mb-8" style={{ color: '#9B8B7A' }}>Cardápio, compras e financeiro em um só lugar</p>
 
       <div className="space-y-4">
 
         {/* Nome */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-          <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>Nome do evento</label>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome do evento</label>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)}
             placeholder="Ex: Casamento Silva, Churrasco de fim de ano"
             className="w-full px-4 py-3 rounded-2xl text-base outline-none"
-            style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+            style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
         </div>
 
         {/* Tipo */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-          <p className="text-sm font-medium mb-3" style={{ color: '#1A2E25' }}>Tipo de evento</p>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Tipo de evento</p>
           <div className="grid grid-cols-3 gap-2">
             {TIPOS_EVENTO.map(t => (
               <button key={t.key} onClick={() => setTipoEvento(t.key)}
                 className="py-2.5 rounded-2xl text-sm font-medium"
                 style={tipoEvento === t.key
-                  ? { background: '#128C7E', color: '#fff' }
-                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                  ? { background: '#C4823A', color: '#fff' }
+                  : { background: '#252015', color: '#9B8B7A', border: '1.5px solid #3A2E22' }}>
                 {t.label}
               </button>
             ))}
@@ -92,15 +92,15 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Total de pessoas */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium" style={{ color: '#1A2E25' }}>Total de convidados</p>
-            <span className="text-2xl font-bold" style={{ color: '#128C7E' }}>{totalPessoas}</span>
+            <p className="text-sm font-medium" style={{ color: '#F2EBE0' }}>Total de convidados</p>
+            <span className="text-2xl font-bold" style={{ color: '#C4823A' }}>{totalPessoas}</span>
           </div>
           <input type="range" min="5" max="500" step="5" value={totalPessoas}
             onChange={e => setTotalPessoas(parseInt(e.target.value))}
-            className="w-full" style={{ accentColor: '#128C7E' }} />
-          <div className="flex justify-between text-xs mt-1" style={{ color: '#7BA892' }}>
+            className="w-full" style={{ accentColor: '#C4823A' }} />
+          <div className="flex justify-between text-xs mt-1" style={{ color: '#9B8B7A' }}>
             <span>5</span><span>100</span><span>250</span><span>500</span>
           </div>
           <div className="flex gap-2 mt-3 flex-wrap">
@@ -108,8 +108,8 @@ export default function NovaReceitaPage() {
               <button key={n} onClick={() => setTotalPessoas(n)}
                 className="px-3 py-1.5 rounded-xl text-xs font-medium"
                 style={totalPessoas === n
-                  ? { background: '#128C7E', color: '#fff' }
-                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                  ? { background: '#C4823A', color: '#fff' }
+                  : { background: '#252015', color: '#9B8B7A', border: '1.5px solid #3A2E22' }}>
                 {n}
               </button>
             ))}
@@ -117,53 +117,53 @@ export default function NovaReceitaPage() {
         </div>
 
         {/* Duração */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-          <p className="text-sm font-medium mb-3" style={{ color: '#1A2E25' }}>Duração do evento</p>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Duração do evento</p>
           <div className="grid grid-cols-2 gap-2">
             {DURACOES.map(d => (
               <button key={d.key} onClick={() => setDuracao(d.key)}
                 className="py-3 rounded-2xl text-left px-4"
                 style={duracao === d.key
-                  ? { background: '#128C7E', color: '#fff' }
-                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                  ? { background: '#C4823A', color: '#fff' }
+                  : { background: '#252015', color: '#9B8B7A', border: '1.5px solid #3A2E22' }}>
                 <p className="text-sm font-semibold">{d.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: duracao === d.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{d.desc}</p>
+                <p className="text-xs mt-0.5" style={{ color: duracao === d.key ? 'rgba(255,255,255,0.7)' : '#9B8B7A' }}>{d.desc}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Perfil de consumo */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-          <p className="text-sm font-medium mb-3" style={{ color: '#1A2E25' }}>Perfil de consumo</p>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <p className="text-sm font-medium mb-3" style={{ color: '#F2EBE0' }}>Perfil de consumo</p>
           <div className="space-y-2">
             {PERFIS.map(p => (
               <button key={p.key} onClick={() => setPerfilConsumo(p.key)}
                 className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left"
                 style={perfilConsumo === p.key
-                  ? { background: '#128C7E', color: '#fff' }
-                  : { background: '#F5FAF7', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                  ? { background: '#C4823A', color: '#fff' }
+                  : { background: '#252015', color: '#9B8B7A', border: '1.5px solid #3A2E22' }}>
                 <span className="font-semibold text-sm">{p.label}</span>
-                <span className="text-xs" style={{ color: perfilConsumo === p.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{p.desc}</span>
+                <span className="text-xs" style={{ color: perfilConsumo === p.key ? 'rgba(255,255,255,0.7)' : '#9B8B7A' }}>{p.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Data */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-          <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>
-            Data do evento <span style={{ color: '#7BA892' }}>(opcional)</span>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>
+            Data do evento <span style={{ color: '#9B8B7A' }}>(opcional)</span>
           </label>
           <input type="date" value={data} onChange={e => setData(e.target.value)}
             className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
-            style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+            style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
         </div>
       </div>
 
       <button onClick={criar} disabled={!podeCriar}
         className="w-full mt-6 py-4 rounded-2xl font-semibold text-base disabled:opacity-40"
-        style={{ background: '#128C7E', color: '#fff' }}>
+        style={{ background: '#C4823A', color: '#fff' }}>
         Criar evento e montar cardápio →
       </button>
     </main>

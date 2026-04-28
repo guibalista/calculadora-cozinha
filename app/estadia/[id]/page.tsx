@@ -98,47 +98,47 @@ function InputReceita({
       <input type="text" value={termo} onChange={e => buscar(e.target.value)}
         placeholder="Nome da refeição (ex: Feijoada, Frango assado...)"
         className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-        style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+        style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
       {buscandoIA && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
           <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+            style={{ borderColor: '#C4823A', borderTopColor: 'transparent' }} />
         </div>
       )}
       {(sugestoes.length > 0 || receitaIA || buscandoIA) && termo.length >= 2 && (
         <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-          style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+          style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
           {sugestoes.map(r => (
             <button key={r.id}
               onMouseDown={e => e.preventDefault()}
               onClick={() => selecionar(r)}
               className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-              style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
+              style={{ borderBottom: '1px solid #3A2E22', color: '#F2EBE0' }}>
               <span className="font-medium">{r.nome}</span>
-              <span className="text-xs" style={{ color: '#7BA892' }}>{r.ingredientes.length} ingredientes</span>
+              <span className="text-xs" style={{ color: '#9B8B7A' }}>{r.ingredientes.length} ingredientes</span>
             </button>
           ))}
           {buscandoIA && !receitaIA && (
             <div className="px-4 py-3.5 flex items-center gap-3">
               <div className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0"
-                style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
-              <span className="text-sm" style={{ color: '#7BA892' }}>Identificando receita...</span>
+                style={{ borderColor: '#C4823A', borderTopColor: 'transparent' }} />
+              <span className="text-sm" style={{ color: '#9B8B7A' }}>Identificando receita...</span>
             </div>
           )}
           {receitaIA && (
             <>
               {sugestoes.length > 0 && (
-                <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
-                  <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
+                <div className="px-4 py-1.5" style={{ background: '#252015', borderBottom: '1px solid #3A2E22' }}>
+                  <span className="text-xs font-medium" style={{ color: '#9B8B7A' }}>Identificado pela IA</span>
                 </div>
               )}
               <button
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => selecionarIA(receitaIA)}
                 className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                style={{ color: '#1A2E25' }}>
+                style={{ color: '#F2EBE0' }}>
                 <span className="font-medium">{receitaIA.nome}</span>
-                <span className="text-xs" style={{ color: '#7BA892' }}>{receitaIA.ingredientes.length} ingredientes</span>
+                <span className="text-xs" style={{ color: '#9B8B7A' }}>{receitaIA.ingredientes.length} ingredientes</span>
               </button>
             </>
           )}
@@ -201,53 +201,53 @@ function InputIngrediente({ onAdicionar, receitaNome }: { onAdicionar: (ing: Ing
         <input type="text" value={termo} onChange={e => buscar(e.target.value)}
           placeholder="Adicionar ingrediente..."
           className="w-full px-4 py-3 rounded-2xl border text-sm outline-none"
-          style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+          style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
         {buscandoIA && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
+              style={{ borderColor: '#C4823A', borderTopColor: 'transparent' }} />
           </div>
         )}
         {sugestoes.length > 0 && (
           <div className="absolute z-20 left-0 right-0 mt-1 rounded-2xl shadow-lg overflow-hidden"
-            style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+            style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
             {veioDaIA && (
-              <div className="px-4 py-1.5" style={{ background: '#F5FAF7', borderBottom: '1px solid #E4F2EA' }}>
-                <span className="text-xs font-medium" style={{ color: '#7BA892' }}>Identificado pela IA</span>
+              <div className="px-4 py-1.5" style={{ background: '#252015', borderBottom: '1px solid #3A2E22' }}>
+                <span className="text-xs font-medium" style={{ color: '#9B8B7A' }}>Identificado pela IA</span>
               </div>
             )}
             {sugestoes.map(s => (
               <button key={s.nome} onClick={() => selecionar(s)}
                 className="w-full text-left px-4 py-3 text-sm flex items-center justify-between"
-                style={{ borderBottom: '1px solid #E4F2EA', color: '#1A2E25' }}>
+                style={{ borderBottom: '1px solid #3A2E22', color: '#F2EBE0' }}>
                 <span>{s.nome}</span>
-                <span className="text-xs" style={{ color: '#7BA892' }}>{s.percapitaGramas}g/p</span>
+                <span className="text-xs" style={{ color: '#9B8B7A' }}>{s.percapitaGramas}g/p</span>
               </button>
             ))}
           </div>
         )}
       </div>
       {selecionado && (
-        <div className="p-3 rounded-2xl space-y-2" style={{ background: '#E8F5EE' }}>
+        <div className="p-3 rounded-2xl space-y-2" style={{ background: '#2A2118' }}>
           <div className="flex items-center gap-2">
-            <span className="flex-1 text-sm font-medium truncate" style={{ color: '#1A2E25' }}>{termo || selecionado.nome}</span>
+            <span className="flex-1 text-sm font-medium truncate" style={{ color: '#F2EBE0' }}>{termo || selecionado.nome}</span>
             <div className="flex items-center gap-1">
               <button onClick={() => setGramas(v => String(Math.max(10, parseFloat(v || '0') - 10)))}
                 className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-                style={{ border: '1.5px solid #C8E4D4', background: '#fff' }}>−</button>
+                style={{ border: '1.5px solid #3A2E22', background: '#252015' }}>−</button>
               <input type="number" value={gramas} onChange={e => setGramas(e.target.value)}
-                className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#1A2E25' }} />
-              <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
+                className="w-14 text-center text-sm font-semibold outline-none bg-transparent" style={{ color: '#F2EBE0' }} />
+              <span className="text-xs" style={{ color: '#9B8B7A' }}>g</span>
               <button onClick={() => setGramas(v => String(parseFloat(v || '0') + 10))}
                 className="w-7 h-7 rounded-full text-sm flex items-center justify-center"
-                style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                style={{ background: '#C4823A', color: '#fff' }}>+</button>
             </div>
-            <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#128C7E', color: '#fff' }}>
+            <button onClick={confirmar} className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: '#C4823A', color: '#fff' }}>
               Adicionar
             </button>
           </div>
           {padrao !== null && parseFloat(gramas) !== padrao && (
-            <p className="text-xs" style={{ color: '#7BA892' }}>
+            <p className="text-xs" style={{ color: '#9B8B7A' }}>
               padrão: {padrao}g/p ·{' '}
               <button onClick={() => setGramas(String(padrao))} className="underline">restaurar</button>
             </p>
@@ -438,8 +438,8 @@ export default function EstadiaPage() {
   }
 
   if (!estadia) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
-      <p style={{ color: '#5A7A68' }}>Carregando...</p>
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#1C1712' }}>
+      <p style={{ color: '#9B8B7A' }}>Carregando...</p>
     </div>
   )
 
@@ -453,11 +453,11 @@ export default function EstadiaPage() {
   const totalPessoas = hospedesTotais.homens + hospedesTotais.mulheres + hospedesTotais.criancas
 
   return (
-    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#F0F7F2' }}>
+    <main className="min-h-screen max-w-lg mx-auto" style={{ background: '#1C1712' }}>
 
       {salvou && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg"
-          style={{ background: '#128C7E', color: '#fff' }}>
+          style={{ background: '#C4823A', color: '#fff' }}>
           Refeição salva
         </div>
       )}
@@ -465,25 +465,25 @@ export default function EstadiaPage() {
       {/* Cabeçalho */}
       <div className="px-5 pt-8 pb-4">
         <div className="flex items-center justify-between mb-5">
-          <Link href="/dashboard" className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
-          <button onClick={abrirEditar} className="text-sm font-medium" style={{ color: '#7BA892' }}>Editar</button>
+          <Link href="/dashboard" className="text-sm font-medium" style={{ color: '#C4823A' }}>← Voltar</Link>
+          <button onClick={abrirEditar} className="text-sm font-medium" style={{ color: '#9B8B7A' }}>Editar</button>
         </div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#1A2E25' }}>{estadia.nome}</h1>
-            <p className="text-sm mt-1" style={{ color: '#5A7A68' }}>
+            <h1 className="text-xl font-bold leading-tight truncate" style={{ color: '#F2EBE0' }}>{estadia.nome}</h1>
+            <p className="text-sm mt-1" style={{ color: '#9B8B7A' }}>
               {estadia.homens + estadia.mulheres + estadia.criancas} hóspedes · {estadia.numero_dias} dias
             </p>
           </div>
           <div className="flex flex-col gap-2 flex-shrink-0">
             <Link href={`/estadia/${id}/lista`}
               className="px-4 py-2.5 rounded-2xl text-sm font-semibold text-center"
-              style={{ background: '#128C7E', color: '#fff' }}>
+              style={{ background: '#C4823A', color: '#fff' }}>
               Lista de compras
             </Link>
             <button onClick={buscarSugestoesIA}
               className="px-4 py-2 rounded-2xl text-xs font-semibold text-center"
-              style={{ border: '1.5px solid #128C7E', color: '#128C7E', background: '#fff' }}>
+              style={{ border: '1.5px solid #C4823A', color: '#C4823A', background: '#252015' }}>
               Sugerir cardápio
             </button>
           </div>
@@ -496,12 +496,12 @@ export default function EstadiaPage() {
           <button key={i} onClick={() => { setDiaAtivo(i); cancelarPrato() }}
             className="flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-medium"
             style={diaAtivo === i
-              ? { background: '#128C7E', color: '#fff' }
-              : { background: '#fff', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+              ? { background: '#C4823A', color: '#fff' }
+              : { background: '#252015', color: '#9B8B7A', border: '1.5px solid #3A2E22' }}>
             {d.label}
             {d.pratos.length > 0 && (
               <span className="ml-1.5 w-4 h-4 rounded-full text-xs inline-flex items-center justify-center"
-                style={{ background: diaAtivo === i ? 'rgba(255,255,255,0.25)' : '#E4F2EA', color: diaAtivo === i ? '#fff' : '#7BA892' }}>
+                style={{ background: diaAtivo === i ? 'rgba(255,255,255,0.25)' : '#3A2E22', color: diaAtivo === i ? '#fff' : '#9B8B7A' }}>
                 {d.pratos.length}
               </span>
             )}
@@ -511,8 +511,8 @@ export default function EstadiaPage() {
 
       <div className="px-5 space-y-4 pb-10">
         {/* Convidados extras */}
-        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-          <p className="font-semibold text-sm mb-4" style={{ color: '#1A2E25' }}>
+        <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+          <p className="font-semibold text-sm mb-4" style={{ color: '#F2EBE0' }}>
             Convidados extras · {totalPessoas} pessoas no total
           </p>
           <div className="grid grid-cols-3 gap-3">
@@ -522,15 +522,15 @@ export default function EstadiaPage() {
               { label: 'Crianças', campo: 'extrasCriancas' as const, val: dia.extrasCriancas },
             ]).map(({ label, campo, val }) => (
               <div key={campo} className="text-center">
-                <p className="text-xs mb-2" style={{ color: '#5A7A68' }}>{label}</p>
+                <p className="text-xs mb-2" style={{ color: '#9B8B7A' }}>{label}</p>
                 <div className="flex items-center justify-center gap-2">
                   <button onClick={() => atualizarExtras(campo, val - 1)}
                     className="w-8 h-8 rounded-full text-sm"
-                    style={{ border: '1.5px solid #C8E4D4', background: '#fff', color: '#1A2E25' }}>−</button>
-                  <span className="font-semibold w-5 text-center text-sm" style={{ color: '#1A2E25' }}>{val}</span>
+                    style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }}>−</button>
+                  <span className="font-semibold w-5 text-center text-sm" style={{ color: '#F2EBE0' }}>{val}</span>
                   <button onClick={() => atualizarExtras(campo, val + 1)}
                     className="w-8 h-8 rounded-full text-sm"
-                    style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                    style={{ background: '#C4823A', color: '#fff' }}>+</button>
                 </div>
               </div>
             ))}
@@ -539,11 +539,11 @@ export default function EstadiaPage() {
 
         {/* Cardápio do dia */}
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-base" style={{ color: '#1A2E25' }}>Cardápio do dia</p>
+          <p className="font-semibold text-base" style={{ color: '#F2EBE0' }}>Cardápio do dia</p>
           {dia.pratos.length > 0 && !adicionandoPrato && (
             <button onClick={() => setAdicionandoPrato(true)}
               className="text-sm font-semibold px-4 py-2 rounded-xl"
-              style={{ background: '#128C7E', color: '#fff' }}>
+              style={{ background: '#C4823A', color: '#fff' }}>
               + Refeição
             </button>
           )}
@@ -551,19 +551,19 @@ export default function EstadiaPage() {
 
         {/* Refeições salvas */}
         {dia.pratos.map(prato => (
-          <div key={prato.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
+          <div key={prato.id} className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
             <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold" style={{ color: '#1A2E25' }}>{prato.nome}</p>
-              <button onClick={() => removerPrato(prato.id)} className="text-lg px-1" style={{ color: '#7BA892' }}>×</button>
+              <p className="font-semibold" style={{ color: '#F2EBE0' }}>{prato.nome}</p>
+              <button onClick={() => removerPrato(prato.id)} className="text-lg px-1" style={{ color: '#9B8B7A' }}>×</button>
             </div>
             <div className="space-y-1">
               {prato.ingredientes.map((ing, i) => {
                 const bruto = (ing.gramasPorPessoa / 1000) * ing.fc * equiv
                 return (
                   <div key={i} className="flex justify-between items-center text-sm py-1.5"
-                    style={{ borderBottom: i < prato.ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                    <span style={{ color: '#5A7A68' }}>{ing.nome}</span>
-                    <span className="font-medium" style={{ color: '#1A2E25' }}>{formatarPeso(bruto)}</span>
+                    style={{ borderBottom: i < prato.ingredientes.length - 1 ? '1px solid #3A2E22' : 'none' }}>
+                    <span style={{ color: '#9B8B7A' }}>{ing.nome}</span>
+                    <span className="font-medium" style={{ color: '#F2EBE0' }}>{formatarPeso(bruto)}</span>
                   </div>
                 )
               })}
@@ -573,8 +573,8 @@ export default function EstadiaPage() {
 
         {/* Formulário nova refeição */}
         {adicionandoPrato ? (
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #128C7E' }}>
-            <p className="font-semibold mb-4" style={{ color: '#1A2E25' }}>Nova refeição</p>
+          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #C4823A' }}>
+            <p className="font-semibold mb-4" style={{ color: '#F2EBE0' }}>Nova refeição</p>
 
             <InputReceita
               onChange={handleChangeNome}
@@ -583,29 +583,29 @@ export default function EstadiaPage() {
             />
 
             {(receitaDaBase || receitaVeioDaIA) && ingredientes.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#E8F5EE' }}>
-                <span className="text-xs font-medium flex-1" style={{ color: '#1A2E25' }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4" style={{ background: '#2A2118' }}>
+                <span className="text-xs font-medium flex-1" style={{ color: '#F2EBE0' }}>
                   {receitaVeioDaIA ? 'Ingredientes identificados pela IA' : `${ingredientes.length} ingredientes carregados da base`}
                 </span>
-                <span className="text-xs" style={{ color: '#7BA892' }}>Ajuste se quiser</span>
+                <span className="text-xs" style={{ color: '#9B8B7A' }}>Ajuste se quiser</span>
               </div>
             )}
 
             {ingredientes.length > 0 && (
-              <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
+              <div className="mb-4 rounded-2xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
                 {ingredientes.map((ing, i) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                    <span className="text-sm flex-1" style={{ color: '#1A2E25' }}>{ing.nome}</span>
+                    style={{ borderBottom: i < ingredientes.length - 1 ? '1px solid #3A2E22' : 'none' }}>
+                    <span className="text-sm flex-1" style={{ color: '#F2EBE0' }}>{ing.nome}</span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => ajustarGramas(i, -10)}
                         className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
-                        style={{ border: '1px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
-                      <span className="text-sm font-medium w-12 text-center" style={{ color: '#1A2E25' }}>{ing.gramasPorPessoa}g</span>
+                        style={{ border: '1px solid #3A2E22', color: '#F2EBE0', background: '#252015' }}>−</button>
+                      <span className="text-sm font-medium w-12 text-center" style={{ color: '#F2EBE0' }}>{ing.gramasPorPessoa}g</span>
                       <button onClick={() => ajustarGramas(i, 10)}
                         className="w-7 h-7 rounded-full text-xs flex items-center justify-center"
-                        style={{ background: '#128C7E', color: '#fff' }}>+</button>
-                      <button onClick={() => removerIngrediente(i)} className="ml-1 text-base px-1" style={{ color: '#7BA892' }}>×</button>
+                        style={{ background: '#C4823A', color: '#fff' }}>+</button>
+                      <button onClick={() => removerIngrediente(i)} className="ml-1 text-base px-1" style={{ color: '#9B8B7A' }}>×</button>
                     </div>
                   </div>
                 ))}
@@ -617,12 +617,12 @@ export default function EstadiaPage() {
             <div className="flex gap-3 mt-4">
               <button onClick={cancelarPrato}
                 className="flex-1 py-3 rounded-2xl text-sm font-medium"
-                style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
+                style={{ border: '1.5px solid #3A2E22', color: '#9B8B7A', background: '#252015' }}>
                 Cancelar
               </button>
               <button onClick={salvarPrato} disabled={!nomePrato || ingredientes.length === 0}
                 className="flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-40"
-                style={{ background: '#128C7E', color: '#fff' }}>
+                style={{ background: '#C4823A', color: '#fff' }}>
                 Salvar refeição
               </button>
             </div>
@@ -630,7 +630,7 @@ export default function EstadiaPage() {
         ) : (
           <button onClick={() => setAdicionandoPrato(true)}
             className="w-full py-4 rounded-3xl text-sm font-semibold"
-            style={{ border: '1.5px dashed #C8E4D4', color: '#128C7E', background: '#fff' }}>
+            style={{ border: '1.5px dashed #3A2E22', color: '#C4823A', background: '#252015' }}>
             + Adicionar refeição ao cardápio
           </button>
         )}
@@ -639,13 +639,13 @@ export default function EstadiaPage() {
           <div className="flex gap-3 pt-2 pb-2">
             <Link href="/dashboard"
               className="px-5 py-4 rounded-2xl font-semibold text-sm"
-              style={{ border: '1.5px solid #C8E4D4', color: '#5A7A68', background: '#fff' }}>
+              style={{ border: '1.5px solid #3A2E22', color: '#9B8B7A', background: '#252015' }}>
               ← Início
             </Link>
             {totalRefeicoes > 0 && (
               <Link href={`/estadia/${id}/lista`}
                 className="flex-1 py-4 rounded-2xl font-semibold text-sm text-center"
-                style={{ background: '#128C7E', color: '#fff' }}>
+                style={{ background: '#C4823A', color: '#fff' }}>
                 Gerar lista de compras
               </Link>
             )}
@@ -654,41 +654,41 @@ export default function EstadiaPage() {
       </div>
 
       {mostrandoSugestoes && (
-        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(26,46,37,0.5)' }}
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(0,0,0,0.65)' }}
           onClick={() => { if (!carregandoIA) { setMostrandoSugestoes(false); setSugestoesIA([]) } }}>
           <div className="mt-auto rounded-t-3xl max-h-[80vh] overflow-y-auto"
-            style={{ background: '#F0F7F2' }}
+            style={{ background: '#1C1712' }}
             onClick={e => e.stopPropagation()}>
-            <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0" style={{ background: '#F0F7F2' }}>
+            <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0" style={{ background: '#1C1712' }}>
               <div>
-                <p className="font-bold text-base" style={{ color: '#1A2E25' }}>Sugestões de cardápio</p>
-                <p className="text-xs mt-0.5" style={{ color: '#5A7A68' }}>Toque para adicionar ao dia selecionado</p>
+                <p className="font-bold text-base" style={{ color: '#F2EBE0' }}>Sugestões de cardápio</p>
+                <p className="text-xs mt-0.5" style={{ color: '#9B8B7A' }}>Toque para adicionar ao dia selecionado</p>
               </div>
               <button onClick={() => { setMostrandoSugestoes(false); setSugestoesIA([]) }}
-                className="text-2xl leading-none" style={{ color: '#5A7A68' }}>×</button>
+                className="text-2xl leading-none" style={{ color: '#9B8B7A' }}>×</button>
             </div>
 
             {carregandoIA ? (
               <div className="flex flex-col items-center justify-center py-16 gap-4">
                 <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-                  style={{ borderColor: '#128C7E', borderTopColor: 'transparent' }} />
-                <p className="text-sm" style={{ color: '#5A7A68' }}>Montando cardápio para o grupo...</p>
+                  style={{ borderColor: '#C4823A', borderTopColor: 'transparent' }} />
+                <p className="text-sm" style={{ color: '#9B8B7A' }}>Montando cardápio para o grupo...</p>
               </div>
             ) : (
               <div className="px-5 pb-8 space-y-3">
                 {sugestoesIA.map((s, i) => (
                   <button key={i} onClick={() => adicionarSugestao(s)}
                     className="w-full text-left p-4 rounded-3xl"
-                    style={{ background: '#fff', border: '1.5px solid #D4EDE0' }}>
+                    style={{ background: '#252015', border: '1.5px solid #3A2E22' }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm" style={{ color: '#1A2E25' }}>{s.nome}</p>
-                        <p className="text-xs mt-1" style={{ color: '#7BA892' }}>
+                        <p className="font-semibold text-sm" style={{ color: '#F2EBE0' }}>{s.nome}</p>
+                        <p className="text-xs mt-1" style={{ color: '#9B8B7A' }}>
                           {s.ingredientes.map(i => i.nome).join(', ')}
                         </p>
                       </div>
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-xl flex-shrink-0"
-                        style={{ background: '#E8F5EE', color: '#128C7E' }}>
+                        style={{ background: '#2A2118', color: '#C4823A' }}>
                         + Adicionar
                       </span>
                     </div>
@@ -701,66 +701,66 @@ export default function EstadiaPage() {
       )}
 
       {editandoEstadia && (
-        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(26,46,37,0.5)' }}
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(0,0,0,0.65)' }}
           onClick={() => setEditandoEstadia(false)}>
           <div className="mt-auto rounded-t-3xl max-h-[90vh] overflow-y-auto"
-            style={{ background: '#F0F7F2' }}
+            style={{ background: '#1C1712' }}
             onClick={e => e.stopPropagation()}>
-            <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0" style={{ background: '#F0F7F2' }}>
-              <p className="font-bold text-base" style={{ color: '#1A2E25' }}>Editar estadia</p>
-              <button onClick={() => setEditandoEstadia(false)} className="text-2xl leading-none" style={{ color: '#5A7A68' }}>×</button>
+            <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0" style={{ background: '#1C1712' }}>
+              <p className="font-bold text-base" style={{ color: '#F2EBE0' }}>Editar estadia</p>
+              <button onClick={() => setEditandoEstadia(false)} className="text-2xl leading-none" style={{ color: '#9B8B7A' }}>×</button>
             </div>
 
             <div className="px-5 pb-8 space-y-4">
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#1A2E25' }}>Nome</label>
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#F2EBE0' }}>Nome</label>
                 <input type="text" value={editNome} onChange={e => setEditNome(e.target.value)}
                   className="w-full px-4 py-3 rounded-2xl border text-base outline-none"
-                  style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+                  style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
               </div>
 
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-                <p className="font-medium text-sm mb-4" style={{ color: '#1A2E25' }}>Período</p>
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                <p className="font-medium text-sm mb-4" style={{ color: '#F2EBE0' }}>Período</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#7BA892' }}>Check-in</label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#9B8B7A' }}>Check-in</label>
                     <input type="date" value={editDataInicio}
                       onChange={e => { setEditDataInicio(e.target.value); if (editDataFim && e.target.value > editDataFim) setEditDataFim('') }}
                       className="w-full px-3 py-3 rounded-2xl border text-sm outline-none"
-                      style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+                      style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#7BA892' }}>Check-out</label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: '#9B8B7A' }}>Check-out</label>
                     <input type="date" value={editDataFim} min={editDataInicio}
                       onChange={e => setEditDataFim(e.target.value)}
                       className="w-full px-3 py-3 rounded-2xl border text-sm outline-none"
-                      style={{ border: '1.5px solid #C8E4D4', background: '#F5FAF7', color: '#1A2E25' }} />
+                      style={{ border: '1.5px solid #3A2E22', background: '#252015', color: '#F2EBE0' }} />
                   </div>
                 </div>
                 {editDataInicio && editDataFim && editDataInicio !== estadia.data_inicio && (
-                  <p className="text-xs mt-3 px-3 py-2 rounded-xl" style={{ background: '#FEF9E7', color: '#92610A' }}>
+                  <p className="text-xs mt-3 px-3 py-2 rounded-xl" style={{ background: '#2A2010', color: '#C4823A' }}>
                     As datas serão atualizadas. Refeições existentes são mantidas por posição do dia.
                   </p>
                 )}
               </div>
 
-              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-                <p className="font-medium text-sm mb-4" style={{ color: '#1A2E25' }}>Hóspedes</p>
+              <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+                <p className="font-medium text-sm mb-4" style={{ color: '#F2EBE0' }}>Hóspedes</p>
                 {([
                   { label: 'Homens', val: editHomens, set: setEditHomens },
                   { label: 'Mulheres', val: editMulheres, set: setEditMulheres },
                   { label: 'Crianças', val: editCriancas, set: setEditCriancas },
                 ] as const).map(({ label, val, set }) => (
-                  <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #E4F2EA' }}>
-                    <p className="text-sm font-medium" style={{ color: '#1A2E25' }}>{label}</p>
+                  <div key={label} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #3A2E22' }}>
+                    <p className="text-sm font-medium" style={{ color: '#F2EBE0' }}>{label}</p>
                     <div className="flex items-center gap-4">
                       <button type="button" onClick={() => set(Math.max(0, val - 1))}
                         className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
-                        style={{ border: '1.5px solid #C8E4D4', color: '#1A2E25', background: '#fff' }}>−</button>
-                      <span className="w-6 text-center font-semibold" style={{ color: '#1A2E25' }}>{val}</span>
+                        style={{ border: '1.5px solid #3A2E22', color: '#F2EBE0', background: '#252015' }}>−</button>
+                      <span className="w-6 text-center font-semibold" style={{ color: '#F2EBE0' }}>{val}</span>
                       <button type="button" onClick={() => set(val + 1)}
                         className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
-                        style={{ background: '#128C7E', color: '#fff' }}>+</button>
+                        style={{ background: '#C4823A', color: '#fff' }}>+</button>
                     </div>
                   </div>
                 ))}
@@ -769,12 +769,12 @@ export default function EstadiaPage() {
               <div className="flex gap-3">
                 <button onClick={() => setEditandoEstadia(false)}
                   className="flex-1 py-4 rounded-2xl text-sm font-semibold"
-                  style={{ border: '1.5px solid #D4EDE0', color: '#5A7A68', background: '#fff' }}>
+                  style={{ border: '1.5px solid #3A2E22', color: '#9B8B7A', background: '#252015' }}>
                   Cancelar
                 </button>
                 <button onClick={salvarEdicao} disabled={!editNome}
                   className="flex-1 py-4 rounded-2xl text-sm font-semibold disabled:opacity-40"
-                  style={{ background: '#128C7E', color: '#fff' }}>
+                  style={{ background: '#C4823A', color: '#fff' }}>
                   Salvar
                 </button>
               </div>

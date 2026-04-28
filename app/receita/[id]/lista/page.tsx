@@ -34,8 +34,8 @@ export default function ListaReceitaPage() {
   }, [id])
 
   if (!evento) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
-      <p style={{ color: '#5A7A68' }}>Carregando...</p>
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#1C1712' }}>
+      <p style={{ color: '#9B8B7A' }}>Carregando...</p>
     </div>
   )
 
@@ -127,9 +127,9 @@ export default function ListaReceitaPage() {
   }
 
   return (
-    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F0F7F2' }}>
+    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#1C1712' }}>
       <div className="flex items-center justify-between mb-6">
-        <Link href={`/receita/${id}`} className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <Link href={`/receita/${id}`} className="text-sm font-medium" style={{ color: '#C4823A' }}>← Voltar</Link>
         {totalItens > 0 && (
           <div className="flex gap-2">
             <button onClick={enviarWhatsApp}
@@ -139,18 +139,18 @@ export default function ListaReceitaPage() {
             </button>
             <button onClick={() => exportarPDF('consolidado')} disabled={gerando !== null}
               className="px-3 py-2 rounded-2xl text-sm font-semibold disabled:opacity-60"
-              style={{ background: '#128C7E', color: '#fff' }}>
+              style={{ background: '#C4823A', color: '#fff' }}>
               {gerando ? 'Gerando...' : 'PDF'}
             </button>
           </div>
         )}
       </div>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Lista de compras</h1>
-      <p className="text-sm mb-2" style={{ color: '#5A7A68' }}>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#F2EBE0' }}>Lista de compras</h1>
+      <p className="text-sm mb-2" style={{ color: '#9B8B7A' }}>
         {evento.nome} · {evento.totalPessoas} pessoas · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
         {Object.keys(overrides).length > 0 && (
-          <span className="ml-2 text-xs font-medium" style={{ color: '#128C7E' }}>
+          <span className="ml-2 text-xs font-medium" style={{ color: '#C4823A' }}>
             · {Object.keys(overrides).length} editado{Object.keys(overrides).length > 1 ? 's' : ''}
           </span>
         )}
@@ -159,38 +159,38 @@ export default function ListaReceitaPage() {
       {/* Perfil aplicado */}
       <div className="flex gap-2 mb-6 flex-wrap">
         <span className="text-xs px-3 py-1.5 rounded-full font-medium"
-          style={{ background: '#E8F5EE', color: '#128C7E' }}>
+          style={{ background: '#2A2118', color: '#C4823A' }}>
           {evento.perfilConsumo ? PERFIL_LABELS[evento.perfilConsumo] : 'Moderado'}
         </span>
         <span className="text-xs px-3 py-1.5 rounded-full font-medium"
-          style={{ background: '#E8F5EE', color: '#128C7E' }}>
+          style={{ background: '#2A2118', color: '#C4823A' }}>
           {evento.duracao ? DURACAO_LABELS[evento.duracao] : 'Tarde'}
         </span>
         <span className="text-xs px-3 py-1.5 rounded-full font-medium"
-          style={{ background: '#F5FAF7', color: '#7BA892', border: '1px solid #D4EDE0' }}>
+          style={{ background: '#252015', color: '#9B8B7A', border: '1px solid #3A2E22' }}>
           fator {(fatorPerfil * fatorDuracao).toFixed(2)}×
         </span>
       </div>
 
       {totalItens === 0 ? (
         <div className="text-center py-16">
-          <p className="text-lg mb-2" style={{ color: '#1A2E25' }}>Nenhuma refeição adicionada</p>
+          <p className="text-lg mb-2" style={{ color: '#F2EBE0' }}>Nenhuma refeição adicionada</p>
           <Link href={`/receita/${id}`} className="px-6 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: '#128C7E', color: '#fff' }}>
+            style={{ background: '#C4823A', color: '#fff' }}>
             Montar cardápio
           </Link>
         </div>
       ) : (
         <div className="space-y-4">
           {grupos.map(grupo => (
-            <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
-              <div className="px-5 py-3" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
-                <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>{grupo.setor}</p>
+            <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+              <div className="px-5 py-3" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
+                <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>{grupo.setor}</p>
               </div>
               {grupo.itens.map((item, i) => (
                 <div key={i} className="px-5 py-4 flex items-center justify-between"
-                  style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
-                  <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
+                  style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #3A2E22' : 'none' }}>
+                  <p className="text-base" style={{ color: '#F2EBE0' }}>{item.nome}</p>
                   <div className="text-right ml-4">
                     {editando === item.nome ? (
                       <div className="flex items-center gap-1 justify-end">
@@ -200,21 +200,21 @@ export default function ListaReceitaPage() {
                           onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
                           autoFocus
                           className="w-16 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
-                          style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
-                        <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
-                        <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
-                        <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                          style={{ border: '1.5px solid #C4823A', color: '#F2EBE0' }} />
+                        <span className="text-xs" style={{ color: '#9B8B7A' }}>g</span>
+                        <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#C4823A' }}>✓</button>
+                        <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#9B8B7A' }}>×</button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5 justify-end">
                         <p className="font-semibold text-base"
-                          style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
+                          style={{ color: overrides[item.nome] ? '#C4823A' : '#F2EBE0' }}>
                           {item.compra}
                         </p>
                         <button
                           onClick={() => iniciarEdit(item.nome, item.brutoKg)}
                           className="text-base opacity-40 hover:opacity-80"
-                          style={{ color: '#7BA892', lineHeight: 1 }}>
+                          style={{ color: '#9B8B7A', lineHeight: 1 }}>
                           ✎
                         </button>
                       </div>
@@ -226,26 +226,26 @@ export default function ListaReceitaPage() {
           ))}
 
           {/* Resumo */}
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Resumo</p>
+          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Resumo</p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Evento</span>
-                <span style={{ color: '#1A2E25' }}>{evento.nome}</span>
+                <span style={{ color: '#9B8B7A' }}>Evento</span>
+                <span style={{ color: '#F2EBE0' }}>{evento.nome}</span>
               </div>
               {dataFormatada && (
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#5A7A68' }}>Data</span>
-                  <span style={{ color: '#1A2E25' }}>{dataFormatada}</span>
+                  <span style={{ color: '#9B8B7A' }}>Data</span>
+                  <span style={{ color: '#F2EBE0' }}>{dataFormatada}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Pessoas</span>
-                <span style={{ color: '#1A2E25' }}>{evento.totalPessoas}</span>
+                <span style={{ color: '#9B8B7A' }}>Pessoas</span>
+                <span style={{ color: '#F2EBE0' }}>{evento.totalPessoas}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Perfil</span>
-                <span className="font-medium" style={{ color: '#128C7E' }}>{descPerfil}</span>
+                <span style={{ color: '#9B8B7A' }}>Perfil</span>
+                <span className="font-medium" style={{ color: '#C4823A' }}>{descPerfil}</span>
               </div>
             </div>
           </div>
@@ -259,12 +259,12 @@ export default function ListaReceitaPage() {
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => exportarPDF('consolidado')} disabled={gerando !== null}
                 className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
-                style={{ background: '#128C7E', color: '#fff' }}>
+                style={{ background: '#C4823A', color: '#fff' }}>
                 {gerando === 'consolidado' ? 'Gerando...' : 'PDF Consolidado'}
               </button>
               <button onClick={() => exportarPDF('porrefeicao')} disabled={gerando !== null}
                 className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
-                style={{ background: '#fff', color: '#128C7E', border: '1.5px solid #128C7E' }}>
+                style={{ background: '#252015', color: '#C4823A', border: '1.5px solid #C4823A' }}>
                 {gerando === 'porrefeicao' ? 'Gerando...' : 'PDF Por Refeição'}
               </button>
             </div>

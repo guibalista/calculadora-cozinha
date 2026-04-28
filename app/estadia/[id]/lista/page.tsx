@@ -51,8 +51,8 @@ export default function ListaComprasPage() {
   useEffect(() => { setOverrides({}) }, [cenario])
 
   if (!estadia) return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: '#F0F7F2' }}>
-      <p style={{ color: '#5A7A68' }}>Carregando...</p>
+    <div className="flex items-center justify-center min-h-screen" style={{ background: '#1C1712' }}>
+      <p style={{ color: '#9B8B7A' }}>Carregando...</p>
     </div>
   )
 
@@ -190,9 +190,9 @@ export default function ListaComprasPage() {
   ]
 
   return (
-    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#F0F7F2' }}>
+    <main className="min-h-screen max-w-lg mx-auto px-5 py-8" style={{ background: '#1C1712' }}>
       <div className="flex items-center justify-between mb-6">
-        <Link href={`/estadia/${id}`} className="text-sm font-medium" style={{ color: '#128C7E' }}>← Voltar</Link>
+        <Link href={`/estadia/${id}`} className="text-sm font-medium" style={{ color: '#C4823A' }}>← Voltar</Link>
         {totalItens > 0 && (
           <button onClick={enviarWhatsApp}
             className="px-3 py-2 rounded-2xl text-sm font-semibold"
@@ -202,32 +202,32 @@ export default function ListaComprasPage() {
         )}
       </div>
 
-      <h1 className="text-2xl font-bold mb-1" style={{ color: '#1A2E25' }}>Lista de compras</h1>
-      <p className="text-sm mb-6" style={{ color: '#5A7A68' }}>
+      <h1 className="text-2xl font-bold mb-1" style={{ color: '#F2EBE0' }}>Lista de compras</h1>
+      <p className="text-sm mb-6" style={{ color: '#9B8B7A' }}>
         {estadia.nome} · {diasComPratos} dia{diasComPratos !== 1 ? 's' : ''} · {totalItens} ingrediente{totalItens !== 1 ? 's' : ''}
         {Object.keys(overrides).length > 0 && (
-          <span className="ml-2 text-xs font-medium" style={{ color: '#128C7E' }}>
+          <span className="ml-2 text-xs font-medium" style={{ color: '#C4823A' }}>
             · {Object.keys(overrides).length} editado{Object.keys(overrides).length > 1 ? 's' : ''}
           </span>
         )}
       </p>
 
       {/* Perfil de compra */}
-      <div className="bg-white rounded-3xl p-4 mb-6" style={{ border: '1.5px solid #D4EDE0' }}>
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Perfil de compra</p>
+      <div className="bg-white rounded-3xl p-4 mb-6" style={{ border: '1.5px solid #3A2E22' }}>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Perfil de compra</p>
         <div className="grid grid-cols-3 gap-2">
           {cenarios.map(c => (
             <button key={c.key} onClick={() => setCenario(c.key)}
               className="py-3 rounded-2xl text-center"
               style={cenario === c.key
-                ? { background: '#128C7E', color: '#fff' }
-                : { background: '#F0F7F2', color: '#5A7A68', border: '1.5px solid #D4EDE0' }}>
+                ? { background: '#C4823A', color: '#fff' }
+                : { background: '#1C1712', color: '#9B8B7A', border: '1.5px solid #3A2E22' }}>
               <p className="text-sm font-semibold">{c.label}</p>
-              <p className="text-xs mt-0.5" style={{ color: cenario === c.key ? 'rgba(255,255,255,0.7)' : '#7BA892' }}>{c.desc}</p>
+              <p className="text-xs mt-0.5" style={{ color: cenario === c.key ? 'rgba(255,255,255,0.7)' : '#9B8B7A' }}>{c.desc}</p>
             </button>
           ))}
         </div>
-        <p className="text-xs mt-3 text-center" style={{ color: '#7BA892' }}>
+        <p className="text-xs mt-3 text-center" style={{ color: '#9B8B7A' }}>
           {cenario === 'moderado' && 'Apetite leve — ligeiramente abaixo do padrão'}
           {cenario === 'conservador' && 'Quantidade padrão — calculada por pessoa'}
           {cenario === 'agressivo' && 'Garantido sobrar — ideal para grupos com muito apetite'}
@@ -236,10 +236,10 @@ export default function ListaComprasPage() {
 
       {totalItens === 0 ? (
         <div className="text-center py-16">
-          <p className="text-lg mb-2" style={{ color: '#1A2E25' }}>Nenhuma refeição adicionada</p>
-          <p className="text-sm mb-6" style={{ color: '#5A7A68' }}>Adicione refeições nos dias para gerar a lista</p>
+          <p className="text-lg mb-2" style={{ color: '#F2EBE0' }}>Nenhuma refeição adicionada</p>
+          <p className="text-sm mb-6" style={{ color: '#9B8B7A' }}>Adicione refeições nos dias para gerar a lista</p>
           <Link href={`/estadia/${id}`} className="px-6 py-3 rounded-2xl font-semibold text-sm"
-            style={{ background: '#128C7E', color: '#fff' }}>
+            style={{ background: '#C4823A', color: '#fff' }}>
             Planejar cardápio
           </Link>
         </div>
@@ -252,11 +252,11 @@ export default function ListaComprasPage() {
             }, 0)
             const temCustoSetor = grupo.itens.some(item => precos[item.nome])
             return (
-              <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #D4EDE0' }}>
-                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #E4F2EA', background: '#F5FAF7' }}>
-                  <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#7BA892' }}>{grupo.setor}</p>
+              <div key={grupo.setor} className="bg-white rounded-3xl overflow-hidden" style={{ border: '1.5px solid #3A2E22' }}>
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #3A2E22', background: '#252015' }}>
+                  <p className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#9B8B7A' }}>{grupo.setor}</p>
                   {temCustoSetor && (
-                    <p className="text-xs font-semibold" style={{ color: '#128C7E' }}>
+                    <p className="text-xs font-semibold" style={{ color: '#C4823A' }}>
                       R$ {custoSetor.toFixed(2).replace('.', ',')}
                     </p>
                   )}
@@ -266,9 +266,9 @@ export default function ListaComprasPage() {
                   const custo = custoItem(item.nome, bruto)
                   return (
                     <div key={i} className="px-5 py-3.5"
-                      style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #E4F2EA' : 'none' }}>
+                      style={{ borderBottom: i < grupo.itens.length - 1 ? '1px solid #3A2E22' : 'none' }}>
                       <div className="flex items-center justify-between">
-                        <p className="text-base" style={{ color: '#1A2E25' }}>{item.nome}</p>
+                        <p className="text-base" style={{ color: '#F2EBE0' }}>{item.nome}</p>
                         <div className="text-right ml-4">
                           {editando === item.nome ? (
                             <div className="flex items-center gap-1 justify-end">
@@ -277,20 +277,20 @@ export default function ListaComprasPage() {
                                 onKeyDown={e => { if (e.key === 'Enter') confirmarEdit(); if (e.key === 'Escape') setEditando(null) }}
                                 autoFocus
                                 className="w-16 text-right text-sm font-semibold outline-none rounded-lg px-2 py-0.5"
-                                style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
-                              <span className="text-xs" style={{ color: '#7BA892' }}>g</span>
-                              <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#128C7E' }}>✓</button>
-                              <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#7BA892' }}>×</button>
+                                style={{ border: '1.5px solid #C4823A', color: '#F2EBE0' }} />
+                              <span className="text-xs" style={{ color: '#9B8B7A' }}>g</span>
+                              <button onClick={confirmarEdit} className="font-bold text-sm" style={{ color: '#C4823A' }}>✓</button>
+                              <button onClick={() => setEditando(null)} className="text-sm" style={{ color: '#9B8B7A' }}>×</button>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 justify-end">
                               <p className="font-semibold text-base"
-                                style={{ color: overrides[item.nome] ? '#128C7E' : '#1A2E25' }}>
+                                style={{ color: overrides[item.nome] ? '#C4823A' : '#F2EBE0' }}>
                                 {item.compra}
                               </p>
                               <button onClick={() => iniciarEdit(item.nome, item.brutoKg)}
                                 className="text-base opacity-40 hover:opacity-80 transition-opacity"
-                                style={{ color: '#7BA892', lineHeight: 1 }}>✎</button>
+                                style={{ color: '#9B8B7A', lineHeight: 1 }}>✎</button>
                             </div>
                           )}
                         </div>
@@ -299,21 +299,21 @@ export default function ListaComprasPage() {
                         <div />
                         {editandoPreco === item.nome ? (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs" style={{ color: '#7BA892' }}>R$</span>
+                            <span className="text-xs" style={{ color: '#9B8B7A' }}>R$</span>
                             <input type="number" value={editPrecoInput}
                               onChange={e => setEditPrecoInput(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Enter') confirmarEditPreco(); if (e.key === 'Escape') setEditandoPreco(null) }}
                               autoFocus placeholder="preço/kg"
                               className="w-20 text-right text-xs outline-none rounded-lg px-2 py-0.5"
-                              style={{ border: '1.5px solid #128C7E', color: '#1A2E25' }} />
-                            <span className="text-xs" style={{ color: '#7BA892' }}>/kg</span>
-                            <button onClick={confirmarEditPreco} className="font-bold text-xs" style={{ color: '#128C7E' }}>✓</button>
-                            <button onClick={() => setEditandoPreco(null)} className="text-xs" style={{ color: '#7BA892' }}>×</button>
+                              style={{ border: '1.5px solid #C4823A', color: '#F2EBE0' }} />
+                            <span className="text-xs" style={{ color: '#9B8B7A' }}>/kg</span>
+                            <button onClick={confirmarEditPreco} className="font-bold text-xs" style={{ color: '#C4823A' }}>✓</button>
+                            <button onClick={() => setEditandoPreco(null)} className="text-xs" style={{ color: '#9B8B7A' }}>×</button>
                           </div>
                         ) : (
                           <button onClick={() => iniciarEditPreco(item.nome)}
                             className="text-xs"
-                            style={{ color: custo !== null ? '#128C7E' : '#C8E4D4' }}>
+                            style={{ color: custo !== null ? '#C4823A' : '#3A2E22' }}>
                             {custo !== null
                               ? `R$ ${custo.toFixed(2).replace('.', ',')}`
                               : '+ preço'}
@@ -328,30 +328,30 @@ export default function ListaComprasPage() {
           })}
 
           {/* Resumo */}
-          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #D4EDE0' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#7BA892' }}>Resumo</p>
+          <div className="bg-white rounded-3xl p-5" style={{ border: '1.5px solid #3A2E22' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9B8B7A' }}>Resumo</p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Estadia</span>
-                <span style={{ color: '#1A2E25' }}>{estadia.nome}</span>
+                <span style={{ color: '#9B8B7A' }}>Estadia</span>
+                <span style={{ color: '#F2EBE0' }}>{estadia.nome}</span>
               </div>
               {periodo && (
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#5A7A68' }}>Período</span>
-                  <span style={{ color: '#1A2E25' }}>{periodo}</span>
+                  <span style={{ color: '#9B8B7A' }}>Período</span>
+                  <span style={{ color: '#F2EBE0' }}>{periodo}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Hóspedes</span>
-                <span style={{ color: '#1A2E25' }}>{totalPessoas} pessoas ({descPessoas})</span>
+                <span style={{ color: '#9B8B7A' }}>Hóspedes</span>
+                <span style={{ color: '#F2EBE0' }}>{totalPessoas} pessoas ({descPessoas})</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Dias planejados</span>
-                <span style={{ color: '#1A2E25' }}>{diasComPratos} de {estadia.numero_dias}</span>
+                <span style={{ color: '#9B8B7A' }}>Dias planejados</span>
+                <span style={{ color: '#F2EBE0' }}>{diasComPratos} de {estadia.numero_dias}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#5A7A68' }}>Cenário</span>
-                <span className="font-medium" style={{ color: '#128C7E' }}>{nomeCenario}</span>
+                <span style={{ color: '#9B8B7A' }}>Cenário</span>
+                <span className="font-medium" style={{ color: '#C4823A' }}>{nomeCenario}</span>
               </div>
               {(() => {
                 const totalCusto = itensList.reduce((sum, item) => {
@@ -362,17 +362,17 @@ export default function ListaComprasPage() {
                 if (itensComPreco === 0) return null
                 return (
                   <>
-                    <div style={{ borderTop: '1px solid #E4F2EA', marginTop: 8, paddingTop: 8 }} />
+                    <div style={{ borderTop: '1px solid #3A2E22', marginTop: 8, paddingTop: 8 }} />
                     <div className="flex justify-between text-sm">
-                      <span style={{ color: '#5A7A68' }}>
+                      <span style={{ color: '#9B8B7A' }}>
                         Custo estimado
                         {itensComPreco < totalItens && (
-                          <span className="ml-1 text-xs" style={{ color: '#7BA892' }}>
+                          <span className="ml-1 text-xs" style={{ color: '#9B8B7A' }}>
                             ({itensComPreco}/{totalItens} ingredientes)
                           </span>
                         )}
                       </span>
-                      <span className="font-bold text-base" style={{ color: '#1A2E25' }}>
+                      <span className="font-bold text-base" style={{ color: '#F2EBE0' }}>
                         R$ {totalCusto.toFixed(2).replace('.', ',')}
                       </span>
                     </div>
@@ -392,12 +392,12 @@ export default function ListaComprasPage() {
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => exportarPDF('consolidado')} disabled={gerando !== null}
                 className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
-                style={{ background: '#128C7E', color: '#fff' }}>
+                style={{ background: '#C4823A', color: '#fff' }}>
                 {gerando === 'consolidado' ? 'Gerando...' : 'PDF Consolidado'}
               </button>
               <button onClick={() => exportarPDF('pordia')} disabled={gerando !== null}
                 className="py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60"
-                style={{ background: '#fff', color: '#128C7E', border: '1.5px solid #128C7E' }}>
+                style={{ background: '#252015', color: '#C4823A', border: '1.5px solid #C4823A' }}>
                 {gerando === 'pordia' ? 'Gerando...' : 'PDF Por Dia'}
               </button>
             </div>
